@@ -40,3 +40,5 @@ class MigratorTest(TestCase):
     def test_create_clients(self):
         migrator = Migrator(self.src, self.dst)
         migrator._create_clients()
+        self.assertTrue(migrator.src_client)
+        self.assertTrue(migrator.dst_client)
