@@ -29,12 +29,12 @@ Help:
 from docopt import docopt
 
 from . import __version__ as VERSION
-from .migrator import Migrator
+from .migrators import TenantMigrator
 
 
 def main():
     args = docopt(__doc__, version=VERSION)
-    migrator = Migrator(
+    migrator = TenantMigrator(
         src = args['<src>'],
         dst = args['<dst>'],
         from_date = args['--from']
