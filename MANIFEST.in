@@ -1,4 +1,5 @@
 exclude .gitignore
+exclude .coverage
 exclude .travis.yml
 include README.rst
 include setup.cfg
