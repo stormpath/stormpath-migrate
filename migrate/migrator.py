@@ -15,6 +15,9 @@ class Migrator(object):
         self._validate_credentials()
         self._create_clients()
 
+    def __repr__(self):
+        return 'Migrator(<%s> -> <%s>)' % (self.src, self.dst)
+
     def _validate_credentials(self):
         """
         Validate all user-specified credentials.
@@ -40,6 +43,3 @@ class Migrator(object):
 
         self.src_client = Client(id=src_id, secret=src_secret)
         self.dst_client = Client(id=dst_id, secret=dst_secret)
-
-    def __repr__(self):
-        return 'Migrator(<%s> -> <%s>)' % (self.src, self.dst)
