@@ -59,7 +59,7 @@ setup(
     packages = find_packages(exclude=['tests*']),
     install_requires = ['docopt', 'stormpath'],
     extras_require = {
-        'test': ['pytest'],
+        'test': ['pytest', 'python-coveralls'],
     },
     entry_points = {
         'console_scripts': [
