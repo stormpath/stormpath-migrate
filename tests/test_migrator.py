@@ -17,3 +17,10 @@ class MigratorTest(TestCase):
         migrator = Migrator('id:secret', 'xxx:yyy')
         self.assertTrue('id:secret' in migrator.__repr__())
         self.assertTrue('xxx:yyy' in migrator.__repr__())
+
+    def test_validate_credentials(self):
+        with self.assertRaises(ValueError):
+            Migrator('hi', 'there')
+
+        with self.assertRaises(ValueError):
+            Migrator(':secret', 'xxx:yyy')
