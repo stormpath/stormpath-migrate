@@ -43,3 +43,13 @@ class Migrator(object):
 
         self.src_client = Client(id=src_id, secret=src_secret)
         self.dst_client = Client(id=dst_id, secret=dst_secret)
+
+    def migrate(self):
+        """
+        Migrates one Tenant to another =)
+
+        Won't stop until the migration is complete.
+
+        NOTE: This may take a longggg time to run.
+        """
+        pass
