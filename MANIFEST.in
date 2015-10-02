@@ -1,0 +1,7 @@
+exclude .gitignore
+exclude .travis.yml
+include README.rst
+include setup.cfg
+prune .git
+prune dist
+recursive-include tests *
