@@ -1,10 +1,10 @@
-"""Our migrator."""
+"""Our Tenant migrator."""
 
 
 from stormpath.client import Client
 
 
-class Migrator(object):
+class TenantMigrator(object):
     """
     This class manages a migration from one Stormpath Tenant to another.
     """
