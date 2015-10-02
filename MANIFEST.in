@@ -2,6 +2,8 @@ exclude .gitignore
 exclude .travis.yml
 include README.rst
 include setup.cfg
+prune .cache
 prune .git
 prune dist
+recursive-exclude *.egg-info *
 recursive-include tests *
