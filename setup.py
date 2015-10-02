@@ -3,13 +3,31 @@
 
 from codecs import open
 from os.path import abspath, dirname, join
+from subprocess import call
 
-from setuptools import find_packages, setup
+from setuptools import Command, find_packages, setup
 
 
 this_dir = abspath(dirname(__file__))
 with open(join(this_dir, 'README.rst'), encoding='utf-8') as file:
     long_description = file.read()
+
+
+class RunTests(Command):
+    """Run all tests."""
+    description = 'run tests'
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        """Run all tests!"""
+        errno = call(['py.test'])
+        raise SystemExit(errno)
 
 
 setup(
@@ -40,17 +58,13 @@ setup(
     keywords = 'stormpath authentication migration development',
     packages = find_packages(exclude=['tests*']),
     install_requires = ['docopt', 'stormpath'],
-    # List additional groups of dependencies here (e.g. development
-    # dependencies). You can install these using the following syntax,
-    # for example:
-    # $ pip install -e .[dev,test]
     extras_require = {
-        'dev': ['check-manifest'],
-        'test': ['coverage'],
+        'test': ['pytest'],
     },
     entry_points = {
         'console_scripts': [
             'stormpath-migrate=migrate.cli:main',
         ],
     },
+    cmdclass = {'test': RunTests},
 )
