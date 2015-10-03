@@ -2,13 +2,13 @@
 stormpath-migrate
 
 Usage:
-  stormpath-migrate <src> <dst> [(-f <date> | --from <date>)]
+  stormpath-migrate <src> <dst> [(-f <date> | --from <date>)] [(-v | --verbose)]
   stormpath-migrate -h | --help
   stormpath-migrate --version
 
 Options:
   -h --help                         Show this screen.
-  -v                                Show verbose output.
+  -v --verbose                      Show verbose output.
   --version                         Show version.
   -i <id> | --id <id>               Stormpath API key id.
   -s <secret> | --secret <secret>   Stormpath API key secret.
