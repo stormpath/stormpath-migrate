@@ -8,12 +8,13 @@ class BaseMigrator(object):
     """"
     This class provides a template for all other migrators.
     """
-    def __init__(self, src, dst, from_date=None):
+    def __init__(self, src, dst, from_date=None, verbose=False):
         self.src = src
         self.dst = dst
         self.from_date = from_date
         self._validate_credentials()
         self._create_clients()
+        self.verbose = verbose
 
     def __repr__(self):
         return '%s(<%s> -> <%s>)' % (self.__class__.__name__, self.src, self.dst)
