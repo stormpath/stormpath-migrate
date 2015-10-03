@@ -37,5 +37,6 @@ def main():
     migrator = TenantMigrator(
         src = args['<src>'],
         dst = args['<dst>'],
-        from_date = args['--from']
+        from_date = args['--from'],
+        verbose = args['--verbose'],
     )
