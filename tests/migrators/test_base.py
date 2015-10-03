@@ -24,6 +24,10 @@ class BaseMigratorTest(TestCase):
         self.assertEqual(migrator.src, 'id:secret')
         self.assertEqual(migrator.dst, 'xxx:yyy')
         self.assertEqual(migrator.from_date, None)
+        self.assertEqual(migrator.verbose, False)
+
+        migrator = BaseMigrator('id:secret', 'xxx:yyy', verbose=True)
+        self.assertEqual(migrator.verbose, True)
 
     def test_repr(self):
         migrator = BaseMigrator('id:secret', 'xxx:yyy')
