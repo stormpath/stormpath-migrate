@@ -21,13 +21,13 @@ class DirectoryMigrator(BaseMigrator):
             otherwise.
         """
         if self.verbose:
-            print '[SOURCE]: Attempting to fetch Directory:', href
+            print '[SOURCE]: Attempting to fetch Directory:' + href
 
         try:
             self.src_dir = self.src.directories.get(href)
             return True
         except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not fetch Directory:', href
+            print '[SOURCE] | [ERROR]: Could not fetch Directory: ' + href
             print err
             return False
 
@@ -40,7 +40,7 @@ class DirectoryMigrator(BaseMigrator):
             otherwise.
         """
         if self.verbose:
-            print '[SOURCE]: Attempting to copy Directory:', self.src_dir.name
+            print '[SOURCE]: Attempting to copy Directory: ' + self.src_dir.name
 
         try:
             if dict(self.src_dir.provider).get('provider_id') != 'stormpath':
@@ -59,7 +59,7 @@ class DirectoryMigrator(BaseMigrator):
                 })
                 return True
         except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy Directory:', self.src_dir.name
+            print '[SOURCE] | [ERROR]: Could not copy Directory: ' + self.src_dir.name
             print err
             return False
 
