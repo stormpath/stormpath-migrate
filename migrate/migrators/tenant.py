@@ -1,7 +1,7 @@
 """Our Tenant migrator."""
 
 
-from . import BaseMigrator
+from . import BaseMigrator, DirectoryMigrator
 
 
 class TenantMigrator(BaseMigrator):
@@ -15,4 +15,12 @@ class TenantMigrator(BaseMigrator):
 
         NOTE: This may take a longggg time to run.
         """
-        pass
+        for directory in self.src_client.directories:
+            directory_migrator = DirectoryMigrator(
+                src = self.src,
+                dst = self.dst,
+                from_date = self.from_date,
+                verbose = self.verbose,
+                href = directory.href,
+            )
+            directory_migrator.migrate()
