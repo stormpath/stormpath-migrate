@@ -4,6 +4,7 @@
 from stormpath.error import Error as StormpathError
 
 from . import BaseMigrator
+from ..utils import sanitize
 
 
 class DirectoryMigrator(BaseMigrator):
@@ -20,13 +21,13 @@ class DirectoryMigrator(BaseMigrator):
             otherwise.
         """
         if self.verbose:
-            print '[SOURCE]: Attempting to fetch Directory:', src_href
+            print '[SOURCE]: Attempting to fetch Directory:', href
 
         try:
-            self.src_dir = self.src_client.get_directory(src_href)
+            self.src_dir = self.src.directories.get(href)
             return True
         except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not fetch Directory:', src_href
+            print '[SOURCE] | [ERROR]: Could not fetch Directory:', href
             print err
             return False
 
@@ -42,19 +43,27 @@ class DirectoryMigrator(BaseMigrator):
             print '[SOURCE]: Attempting to copy Directory:', self.src_dir.name
 
         try:
-            self.dst_client.directories.create({
-                'description': self.src_dir.description,
-                'name': self.src_dir.name,
-                'provider': self.src_dir.provider,
-                'status': self.src_dir.status,
-            })
-            return True
+            if dict(self.src_dir.provider).get('provider_id') != 'stormpath':
+                self.dst_dir = self.dst.directories.create({
+                    'description': self.src_dir.description,
+                    'name': self.src_dir.name,
+                    'provider': sanitize(self.src_dir.provider),
+                    'status': self.src_dir.status,
+                })
+                return True
+            else:
+                self.dst_dir = self.dst.directories.create({
+                    'description': self.src_dir.description,
+                    'name': self.src_dir.name,
+                    'status': self.src_dir.status,
+                })
+                return True
         except StormpathError, err:
             print '[SOURCE] | [ERROR]: Could not copy Directory:', self.src_dir.name
             print err
             return False
 
-    def migrate(self, src_href):
+    def migrate(self, href):
         """
         Migrates one Directory to another Tenant =)  Won't stop until the
         migration is complete.
@@ -65,9 +74,9 @@ class DirectoryMigrator(BaseMigrator):
         way we avoid emailing users unnecessarily when a Directory has Workflows
         enabled.
 
-        :param str src_href: The href of the source Directory to copy.
+        :param str href: The href of the source Directory to copy.
         """
-        while not self.get_src_dir():
+        while not self.get_src_dir(href):
             pass
 
         while not self.create_dst_dir():
