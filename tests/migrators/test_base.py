@@ -3,8 +3,11 @@
 
 from os import environ
 from unittest import TestCase
+from uuid import uuid4
 
-from migrate.migrators import BaseMigrator
+from stormpath.client import Client
+
+from migrate.migrators import BaseMigrator, DirectoryMigrator
 
 
 # Necessary environment variables.
@@ -16,8 +19,8 @@ DST_CLIENT_SECRET = environ['DST_CLIENT_SECRET']
 
 class BaseMigratorTest(TestCase):
     def setUp(self):
-        self.src = 'blah'
-        self.dst = 'blah'
+        self.src = Client(id=SRC_CLIENT_ID, secret=SRC_CLIENT_SECRET)
+        self.dst = Client(id=DST_CLIENT_ID, secret=DST_CLIENT_SECRET)
 
     def test_init(self):
         migrator = BaseMigrator(self.src, self.dst)
@@ -32,3 +35,17 @@ class BaseMigratorTest(TestCase):
     def test_repr(self):
         migrator = BaseMigrator(self.src, self.dst)
         self.assertEqual('BaseMigrator()', migrator.__repr__())
+
+    def test_get_custom_data(self):
+        self.directory = self.src.directories.create({
+            'custom_data': {'hi': 'there'},
+            'description': uuid4().hex,
+            'name': uuid4().hex,
+            'status': 'DISABLED',
+        })
+
+        migrator = DirectoryMigrator(self.src, self.dst)
+        custom_data = migrator.get_custom_data(self.directory)
+
+        self.assertEqual(custom_data['hi'], 'there')
+        self.directory.delete()
