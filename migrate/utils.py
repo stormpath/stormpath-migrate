@@ -20,4 +20,12 @@ def sanitize(resource):
         if obj.get(field):
             del obj[field]
 
+    to_delete = []
+    for key, value in obj.iteritems():
+        if isinstance(value, object):
+            to_delete.append(key)
+
+    for key in to_delete:
+        del obj[key]
+
     return obj
