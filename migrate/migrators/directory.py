@@ -11,7 +11,7 @@ class DirectoryMigrator(BaseMigrator):
     """
     This class manages a migration from one Stormpath Directory to another.
     """
-    def get_src_dir(self, href):
+    def get(self, href):
         """
         Retrieve the source Directory.
 
@@ -31,7 +31,7 @@ class DirectoryMigrator(BaseMigrator):
             print err
             return False
 
-    def create_dst_dir(self):
+    def copy(self):
         """
         Copy the source Directory over into the destination Tenant.
 
@@ -76,8 +76,8 @@ class DirectoryMigrator(BaseMigrator):
 
         :param str href: The href of the source Directory to copy.
         """
-        while not self.get_src_dir(href):
+        while not self.get(href):
             pass
 
-        while not self.create_dst_dir():
+        while not self.copy():
             pass

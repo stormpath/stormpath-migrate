@@ -25,7 +25,7 @@ class DirectoryMigratorTest(TestCase):
     def tearDown(self):
         self.directory.delete()
 
-    def test_get_src_dir(self):
+    def test_get(self):
         self.directory = self.src.directories.create({
             'description': uuid4().hex,
             'name': uuid4().hex,
@@ -34,11 +34,11 @@ class DirectoryMigratorTest(TestCase):
 
         migrator = DirectoryMigrator(self.src, self.dst)
 
-        self.assertTrue(migrator.get_src_dir(self.directory.href))
+        self.assertTrue(migrator.get(self.directory.href))
         self.assertEqual(migrator.src_dir.href, self.directory.href)
         self.assertEqual(migrator.src_dir.name, self.directory.name)
 
-    def test_create_dst_dir(self):
+    def test_copt(self):
         self.directory = self.src.directories.create({
             'description': uuid4().hex,
             'name': uuid4().hex,
@@ -47,8 +47,8 @@ class DirectoryMigratorTest(TestCase):
 
         migrator = DirectoryMigrator(self.src, self.dst)
 
-        migrator.get_src_dir(self.directory.href)
-        self.assertTrue(migrator.create_dst_dir())
+        migrator.get(self.directory.href)
+        self.assertTrue(migrator.copy())
         self.assertEqual(migrator.src_dir.description, migrator.dst_dir.description)
         self.assertEqual(migrator.src_dir.name, migrator.dst_dir.name)
         self.assertEqual(migrator.src_dir.provider.provider_id, migrator.dst_dir.provider.provider_id)
@@ -70,8 +70,8 @@ class DirectoryMigratorTest(TestCase):
 
         migrator = DirectoryMigrator(self.src, self.dst)
 
-        migrator.get_src_dir(self.directory.href)
-        self.assertTrue(migrator.create_dst_dir())
+        migrator.get(self.directory.href)
+        self.assertTrue(migrator.copy())
         self.assertEqual(migrator.src_dir.description, migrator.dst_dir.description)
         self.assertEqual(migrator.src_dir.name, migrator.dst_dir.name)
         self.assertEqual(migrator.src_dir.provider.provider_id, migrator.dst_dir.provider.provider_id)
