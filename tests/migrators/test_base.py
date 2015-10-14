@@ -36,6 +36,20 @@ class BaseMigratorTest(TestCase):
         migrator = BaseMigrator(self.src, self.dst)
         self.assertEqual('BaseMigrator()', migrator.__repr__())
 
+    def test_get_resource(self):
+        directory = self.src.directories.create({
+            'custom_data': {'hi': 'there'},
+            'description': uuid4().hex,
+            'name': uuid4().hex,
+            'status': 'DISABLED',
+        })
+
+        migrator = DirectoryMigrator(self.src, self.dst)
+        resource = migrator.get_resource(directory.href)
+
+        self.assertEqual(resource.name, directory.name)
+        directory.delete()
+
     def test_get_custom_data(self):
         self.directory = self.src.directories.create({
             'custom_data': {'hi': 'there'},
