@@ -51,7 +51,7 @@ class BaseMigratorTest(TestCase):
         directory.delete()
 
     def test_get_custom_data(self):
-        self.directory = self.src.directories.create({
+        directory = self.src.directories.create({
             'custom_data': {'hi': 'there'},
             'description': uuid4().hex,
             'name': uuid4().hex,
@@ -59,7 +59,25 @@ class BaseMigratorTest(TestCase):
         })
 
         migrator = DirectoryMigrator(self.src, self.dst)
-        custom_data = migrator.get_custom_data(self.directory)
+        custom_data = migrator.get_custom_data(directory)
 
         self.assertEqual(custom_data['hi'], 'there')
-        self.directory.delete()
+        directory.delete()
+
+    def test_copy_custom_data(self):
+        directory = self.src.directories.create({
+            'custom_data': {'hi': 'there'},
+            'description': uuid4().hex,
+            'name': uuid4().hex,
+            'status': 'DISABLED',
+        })
+
+        migrator = DirectoryMigrator(self.src, self.dst)
+        custom_data = migrator.get_custom_data(directory)
+        new_dir = migrator.copy_dir(dir=directory)
+        data = migrator.copy_custom_data(resource=new_dir, custom_data=custom_data)
+
+        self.assertEqual(data['hi'], 'there')
+
+        directory.delete()
+        new_dir.delete()

@@ -2,6 +2,9 @@
 
 
 from stormpath.client import Client
+from stormpath.error import Error as StormpathError
+
+from migrate.utils import sanitize
 
 
 class BaseMigrator(object):
@@ -51,6 +54,30 @@ class BaseMigrator(object):
             return resource.custom_data
         except StormpathError, err:
             print '[SOURCE] | [ERROR]: Could not fetch CustomData for Resource:', resource.href
+            print err
+
+    def copy_custom_data(self, resource, custom_data):
+        """
+        Copy the Resource's CustomData over.
+
+        :param obj resource: The Resource to store CustomData on.
+        :param obj custom_data: The CustomData to copy.
+        :rtype: object (or None)
+        :returns: The copied CustomData, or None.
+        """
+        if self.verbose:
+            print '[SOURCE]: Attempting to copy CustomData for Resource:', resource.href
+
+        try:
+            new_custom_data = resource.custom_data
+            for key, value in sanitize(custom_data).iteritems():
+                new_custom_data[key] = value
+
+            new_custom_data.save()
+
+            return new_custom_data
+        except StormpathError, err:
+            print '[SOURCE] | [ERROR]: Could not copy CustomData for Resource:', resource.href
             print err
 
     def migrate(self):
