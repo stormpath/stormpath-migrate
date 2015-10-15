@@ -11,57 +11,69 @@ class DirectoryMigrator(BaseMigrator):
     """
     This class manages a migration from one Stormpath Directory to another.
     """
-    def get(self, href):
-        """
-        Retrieve the source Directory.
+    RESOURCE = 'directory'
+    COLLECTION_RESOURCE = 'directories'
 
-        :param str href: The source Directory href.
-        :rtype: bool
-        :returns: True if the Directory was successfully fetched, False
-            otherwise.
+    def get_strength(self, dir):
+        """
+        Retrieve the Strength.
+
+        :rtype: object (or None)
+        :returns: The Strength, or None.
         """
         if self.verbose:
-            print '[SOURCE]: Attempting to fetch Directory:', href
+            print '[SOURCE]: Attempting to fetch Strength for Directory:', dir.href
 
         try:
-            self.src_dir = self.src.directories.get(href)
-            return True
+            strength = dir.password_policy.strength
+            dict(strength)
+            return strength
         except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not fetch Directory:', href
+            print '[SOURCE] | [ERROR]: Could not fetch Strength for Directory:', dir.href
             print err
-            return False
 
-    def copy(self):
+    def copy_dir(self, dir, custom_data, strength):
         """
         Copy the source Directory over into the destination Tenant.
 
-        :rtype: bool
-        :returns: True if the Directory was successfully copied, False
-            otherwise.
+        :param obj dir: The Directory to copy.
+        :param obj custom_data: The CustomData to copy.
+        :param obj strength: The Strength to copy.
+        :rtype: object (or None)
+        :returns: The copied Directory, or None.
         """
         if self.verbose:
-            print '[SOURCE]: Attempting to copy Directory:', self.src_dir.name
+            print '[SOURCE]: Attempting to copy Directory:', dir.name
 
         try:
-            if dict(self.src_dir.provider).get('provider_id') != 'stormpath':
-                self.dst_dir = self.dst.directories.create({
-                    'description': self.src_dir.description,
-                    'name': self.src_dir.name,
-                    'provider': sanitize(self.src_dir.provider),
-                    'status': self.src_dir.status,
-                })
-                return True
-            else:
-                self.dst_dir = self.dst.directories.create({
-                    'description': self.src_dir.description,
-                    'name': self.src_dir.name,
-                    'status': self.src_dir.status,
-                })
-                return True
+            data = {
+                'description': dir.description,
+                'name': dir.name,
+                'status': dir.status,
+            }
+
+            if dict(dir.provider).get('provider_id') != 'stormpath':
+                data['provider'] = sanitize(dir.provider)
+
+            if sanitize(custom_data):
+                data['custom_data'] = sanitize(custom_data)
+
+            copied_dir = self.dst.directories.create(data)
+            if self.verbose:
+                print '[SOURCE]: Attempting to copy Strength rules for Directory:', dir.name
+
+            copied_strength = copied_dir.password_policy.strength
+
+            for field in copied_strength.writable_attrs:
+                copied_strength[field] = strength[field]
+
+            copied_strength.save()
+            copied_dir.save()
+
+            return copied_dir
         except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy Directory:', self.src_dir.name
+            print '[SOURCE] | [ERROR]: Could not copy Directory:', dir.name
             print err
-            return False
 
     def migrate(self, href):
         """
@@ -76,8 +88,16 @@ class DirectoryMigrator(BaseMigrator):
 
         :param str href: The href of the source Directory to copy.
         """
-        while not self.get(href):
-            pass
+        dir, custom_data, password_policy = None
 
-        while not self.copy():
-            pass
+        while not dir:
+            dir = self.get_resource(href)
+
+        while not custom_data:
+            custom_data = self.get_custom_data(dir)
+
+        while not password_policy:
+            password_policy = self.get_password_policy(dir)
+
+        while not self.copy_dir(dir=dir, custom_data=custom_data, password_policy=password_policy):
+            continue

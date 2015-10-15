@@ -1,6 +1,9 @@
 """Utility funtions."""
 
 
+from stormpath.resources import CollectionResource, Resource
+
+
 # A list of fields to sanitize.
 FIELDS = ['created_at', 'href', 'modified_at', 'sp_http_status']
 
@@ -22,7 +25,7 @@ def sanitize(resource):
 
     to_delete = []
     for key, value in obj.iteritems():
-        if isinstance(value, object):
+        if isinstance(value, Resource) or isinstance(value, CollectionResource):
             to_delete.append(key)
 
     for key in to_delete:
