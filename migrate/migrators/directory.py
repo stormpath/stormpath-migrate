@@ -32,13 +32,35 @@ class DirectoryMigrator(BaseMigrator):
             print '[SOURCE] | [ERROR]: Could not fetch Strength for Directory:', dir.href
             print err
 
-    def copy_dir(self, dir, custom_data, strength):
+    def copy_strength(self, dir, strength):
+        """
+        Copy the Strength rules to the given Directory.
+
+        :param obj dir: The Directory to use.
+        :param obj strength: The Strength to copy.
+        :rtype: object (or None)
+        :returns: The copied Strength, or None.
+        """
+        if self.verbose:
+            print '[SOURCE]: Attempting to copy Strength rules for Directory:', dir.name
+
+        try:
+            copied_strength = dir.password_policy.strength
+            for field in copied_strength.writable_attrs:
+                copied_strength[field] = strength[field]
+
+            copied_strength.save()
+
+            return copied_strength
+        except StormpathError, err:
+            print '[SOURCE] | [ERROR]: Could not copy Directory:', dir.name
+            print err
+
+    def copy_dir(self, dir):
         """
         Copy the source Directory over into the destination Tenant.
 
         :param obj dir: The Directory to copy.
-        :param obj custom_data: The CustomData to copy.
-        :param obj strength: The Strength to copy.
         :rtype: object (or None)
         :returns: The copied Directory, or None.
         """
@@ -55,22 +77,7 @@ class DirectoryMigrator(BaseMigrator):
             if dict(dir.provider).get('provider_id') != 'stormpath':
                 data['provider'] = sanitize(dir.provider)
 
-            if sanitize(custom_data):
-                data['custom_data'] = sanitize(custom_data)
-
-            copied_dir = self.dst.directories.create(data)
-            if self.verbose:
-                print '[SOURCE]: Attempting to copy Strength rules for Directory:', dir.name
-
-            copied_strength = copied_dir.password_policy.strength
-
-            for field in copied_strength.writable_attrs:
-                copied_strength[field] = strength[field]
-
-            copied_strength.save()
-            copied_dir.save()
-
-            return copied_dir
+            return self.dst.directories.create(data)
         except StormpathError, err:
             print '[SOURCE] | [ERROR]: Could not copy Directory:', dir.name
             print err
@@ -88,7 +95,7 @@ class DirectoryMigrator(BaseMigrator):
 
         :param str href: The href of the source Directory to copy.
         """
-        dir, custom_data, password_policy = None
+        dir, custom_data, strength, dst_dir = None
 
         while not dir:
             dir = self.get_resource(href)
@@ -96,8 +103,11 @@ class DirectoryMigrator(BaseMigrator):
         while not custom_data:
             custom_data = self.get_custom_data(dir)
 
-        while not password_policy:
-            password_policy = self.get_password_policy(dir)
+        while not strength:
+            strength = self.get_strength(dir)
 
-        while not self.copy_dir(dir=dir, custom_data=custom_data, password_policy=password_policy):
+        while not dst_dir:
+            dst_dir = self.copy_dir(dir=dir, password_policy=password_policy)
+
+        while not self.copy_custom_data(resource=dst_dir, custom_data=custom_data):
             continue
