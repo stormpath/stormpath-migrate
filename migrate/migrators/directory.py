@@ -82,7 +82,7 @@ class DirectoryMigrator(BaseMigrator):
             print '[SOURCE] | [ERROR]: Could not copy Directory:', dir.name
             print err
 
-    def migrate(self, href):
+    def migrate(self, dir):
         """
         Migrates one Directory to another Tenant =)  Won't stop until the
         migration is complete.
@@ -93,12 +93,13 @@ class DirectoryMigrator(BaseMigrator):
         way we avoid emailing users unnecessarily when a Directory has Workflows
         enabled.
 
-        :param str href: The href of the source Directory to copy.
+        :param obj dir: The source Directory to copy.
         """
-        dir, custom_data, strength, dst_dir = None
-
-        while not dir:
-            dir = self.get_resource(href)
+        custom_data = None
+        strength = None
+        copied_dir = None
+        copied_custom_data = None
+        copied_strength = None
 
         while not custom_data:
             custom_data = self.get_custom_data(dir)
@@ -106,8 +107,13 @@ class DirectoryMigrator(BaseMigrator):
         while not strength:
             strength = self.get_strength(dir)
 
-        while not dst_dir:
-            dst_dir = self.copy_dir(dir=dir, password_policy=password_policy)
+        while not copied_dir:
+            copied_dir = self.copy_dir(dir=dir)
 
-        while not self.copy_custom_data(resource=dst_dir, custom_data=custom_data):
-            continue
+        while not copied_custom_data:
+            copied_custom_data = self.copy_custom_data(resource=copied_dir, custom_data=custom_data)
+
+        while not copied_strength:
+            copied_strength = self.copy_strength(dir=copied_dir, strength=strength)
+
+        return copied_dir

@@ -8,6 +8,7 @@ from uuid import uuid4
 from stormpath.client import Client
 
 from migrate.migrators import DirectoryMigrator
+from migrate.utils import sanitize
 
 
 # Necessary environment variables.
@@ -127,9 +128,9 @@ class DirectoryMigratorTest(TestCase):
 
         migrator = DirectoryMigrator(self.src, self.dst)
 
-        copied_dir = migrator.copy_dir(dir=directory)
-        copied_custom_data = migrator.copy_custom_data(resource=directory, custom_data=custom_data)
-        copied_strength = migrator.copy_strength(dir=directory, strength=strength)
+        copied_dir = migrator.migrate(directory)
+        copied_custom_data = copied_dir.custom_data
+        copied_strength = copied_dir.password_policy.strength
 
         self.assertEqual(copied_dir.description, directory.description)
         self.assertEqual(copied_dir.name, directory.name)
@@ -137,7 +138,7 @@ class DirectoryMigratorTest(TestCase):
 
         self.assertEqual(copied_custom_data['hi'], custom_data['hi'])
 
-        for key in dict(strength).keys():
+        for key in sanitize(strength).keys():
             self.assertEqual(copied_strength[key], strength[key])
 
         directory.delete()
