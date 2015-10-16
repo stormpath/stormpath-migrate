@@ -104,3 +104,41 @@ class DirectoryMigratorTest(TestCase):
 
         directory.delete()
         copied_dir.delete()
+
+    def test_migrate(self):
+        directory = self.src.directories.create({
+            'description': uuid4().hex,
+            'name': uuid4().hex,
+            'status': 'DISABLED',
+            'custom_data': {'hi': 'there'},
+        })
+
+        custom_data = directory.custom_data
+
+        strength = directory.password_policy.strength
+        strength.max_length = 100
+        strength.min_length = 1
+        strength.min_lower_case = 0
+        strength.min_numeric = 0
+        strength.min_symbol = 0
+        strength.min_upper_case = 0
+        strength.min_diacritic = 0
+        strength.save()
+
+        migrator = DirectoryMigrator(self.src, self.dst)
+
+        copied_dir = migrator.copy_dir(dir=directory)
+        copied_custom_data = migrator.copy_custom_data(resource=directory, custom_data=custom_data)
+        copied_strength = migrator.copy_strength(dir=directory, strength=strength)
+
+        self.assertEqual(copied_dir.description, directory.description)
+        self.assertEqual(copied_dir.name, directory.name)
+        self.assertEqual(copied_dir.status, directory.status)
+
+        self.assertEqual(copied_custom_data['hi'], custom_data['hi'])
+
+        for key in dict(strength).keys():
+            self.assertEqual(copied_strength[key], strength[key])
+
+        directory.delete()
+        copied_dir.delete()
