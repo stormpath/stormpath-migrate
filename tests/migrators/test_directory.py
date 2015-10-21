@@ -23,46 +23,56 @@ class DirectoryMigratorTest(TestCase):
         self.src = Client(id=SRC_CLIENT_ID, secret=SRC_CLIENT_SECRET)
         self.dst = Client(id=DST_CLIENT_ID, secret=DST_CLIENT_SECRET)
 
-    def test_get_strength(self):
-        directory = self.src.directories.create({
+    def test_get_custom_data(self):
+        dir = self.src.directories.create({
             'description': uuid4().hex,
             'name': uuid4().hex,
             'status': 'DISABLED',
             'custom_data': {'hi': 'there'},
         })
 
-        migrator = DirectoryMigrator(self.src, self.dst)
+        migrator = DirectoryMigrator(destination_client=self.dst, source_directory=dir)
+        custom_data = migrator.get_custom_data()
+        self.assertTrue(custom_data)
+        self.assertEqual(custom_data['hi'], 'there')
 
-        src_dir = migrator.get_resource(directory.href)
-        src_strength = migrator.get_strength(src_dir)
+        dir.delete()
 
-        self.assertTrue(src_strength)
+    def test_get_strength(self):
+        dir = self.src.directories.create({
+            'description': uuid4().hex,
+            'name': uuid4().hex,
+            'status': 'DISABLED',
+            'custom_data': {'hi': 'there'},
+        })
 
-        directory.delete()
+        migrator = DirectoryMigrator(destination_client=self.dst, source_directory=dir)
+        strength = migrator.get_strength()
+        self.assertTrue(strength)
+
+        dir.delete()
 
     def test_copy_dir(self):
-        directory = self.src.directories.create({
+        dir = self.src.directories.create({
             'description': uuid4().hex,
             'name': uuid4().hex,
             'status': 'DISABLED',
             'custom_data': {'hi': 'there'},
         })
 
-        migrator = DirectoryMigrator(self.src, self.dst)
-
-        src_dir = migrator.get_resource(directory.href)
-        copied_dir = migrator.copy_dir(dir=src_dir)
+        migrator = DirectoryMigrator(destination_client=self.dst, source_directory=dir)
+        copied_dir = migrator.copy_dir()
 
         self.assertTrue(copied_dir)
-        self.assertEqual(src_dir.description, copied_dir.description)
-        self.assertEqual(src_dir.name, copied_dir.name)
-        self.assertEqual(src_dir.provider.provider_id, copied_dir.provider.provider_id)
-        self.assertEqual(src_dir.status, copied_dir.status)
+        self.assertEqual(dir.description, copied_dir.description)
+        self.assertEqual(dir.name, copied_dir.name)
+        self.assertEqual(dir.provider.provider_id, copied_dir.provider.provider_id)
+        self.assertEqual(dir.status, copied_dir.status)
 
-        directory.delete()
+        dir.delete()
         copied_dir.delete()
 
-        directory = self.src.directories.create({
+        dir = self.src.directories.create({
             'description': uuid4().hex,
             'name': uuid4().hex,
             'status': 'DISABLED',
@@ -74,49 +84,66 @@ class DirectoryMigratorTest(TestCase):
             }
         })
 
-        migrator = DirectoryMigrator(self.src, self.dst)
-
-        src_dir = migrator.get_resource(directory.href)
-        copied_dir = migrator.copy_dir(dir=src_dir)
+        migrator = DirectoryMigrator(destination_client=self.dst, source_directory=dir)
+        copied_dir = migrator.copy_dir()
 
         self.assertTrue(copied_dir)
-        self.assertEqual(src_dir.description, copied_dir.description)
-        self.assertEqual(src_dir.name, copied_dir.name)
-        self.assertEqual(src_dir.provider.provider_id, copied_dir.provider.provider_id)
-        self.assertEqual(src_dir.provider.client_id, copied_dir.provider.client_id)
-        self.assertEqual(src_dir.provider.client_secret, copied_dir.provider.client_secret)
-        self.assertEqual(src_dir.provider.redirect_uri, copied_dir.provider.redirect_uri)
-        self.assertEqual(src_dir.status, copied_dir.status)
+        self.assertEqual(dir.description, copied_dir.description)
+        self.assertEqual(dir.name, copied_dir.name)
+        self.assertEqual(dir.provider.provider_id, copied_dir.provider.provider_id)
+        self.assertEqual(dir.provider.client_id, copied_dir.provider.client_id)
+        self.assertEqual(dir.provider.client_secret, copied_dir.provider.client_secret)
+        self.assertEqual(dir.provider.redirect_uri, copied_dir.provider.redirect_uri)
+        self.assertEqual(dir.status, copied_dir.status)
 
-        directory.delete()
+        dir.delete()
+        copied_dir.delete()
+
+    def test_copy_custom_data(self):
+        dir = self.src.directories.create({
+            'custom_data': {'hi': 'there'},
+            'description': uuid4().hex,
+            'name': uuid4().hex,
+            'status': 'DISABLED',
+        })
+
+        migrator = DirectoryMigrator(destination_client=self.dst, source_directory=dir)
+        copied_dir = migrator.copy_dir()
+        copied_data = migrator.copy_custom_data()
+
+        self.assertEqual(copied_data['hi'], 'there')
+
+        dir.delete()
         copied_dir.delete()
 
     def test_copy_strength(self):
-        directory = self.src.directories.create({'name': uuid4().hex})
-        migrator = DirectoryMigrator(self.src, self.dst)
+        dir = self.src.directories.create({'name': uuid4().hex})
+        strength = dir.password_policy.strength
 
-        src_dir = migrator.get_resource(directory.href)
-        strength = migrator.get_strength(src_dir)
-        copied_dir = migrator.copy_dir(dir=src_dir)
-        copied_strength = migrator.copy_strength(dir=src_dir, strength=strength)
+        strength.max_length = 101
+        strength.save()
 
-        for key in strength.writable_attrs:
+        migrator = DirectoryMigrator(destination_client=self.dst, source_directory=dir)
+        copied_dir = migrator.copy_dir()
+        copied_strength = migrator.copy_strength()
+
+        for key in copied_strength.writable_attrs:
             self.assertEqual(copied_strength[key], strength[key])
 
-        directory.delete()
+        dir.delete()
         copied_dir.delete()
 
     def test_migrate(self):
-        directory = self.src.directories.create({
+        dir = self.src.directories.create({
             'description': uuid4().hex,
             'name': uuid4().hex,
             'status': 'DISABLED',
             'custom_data': {'hi': 'there'},
         })
 
-        custom_data = directory.custom_data
+        custom_data = dir.custom_data
+        strength = dir.password_policy.strength
 
-        strength = directory.password_policy.strength
         strength.max_length = 100
         strength.min_length = 1
         strength.min_lower_case = 0
@@ -126,20 +153,19 @@ class DirectoryMigratorTest(TestCase):
         strength.min_diacritic = 0
         strength.save()
 
-        migrator = DirectoryMigrator(self.src, self.dst)
-
-        copied_dir = migrator.migrate(directory)
+        migrator = DirectoryMigrator(destination_client=self.dst, source_directory=dir)
+        copied_dir = migrator.migrate()
         copied_custom_data = copied_dir.custom_data
         copied_strength = copied_dir.password_policy.strength
 
-        self.assertEqual(copied_dir.description, directory.description)
-        self.assertEqual(copied_dir.name, directory.name)
-        self.assertEqual(copied_dir.status, directory.status)
+        self.assertEqual(copied_dir.description, dir.description)
+        self.assertEqual(copied_dir.name, dir.name)
+        self.assertEqual(copied_dir.status, dir.status)
 
         self.assertEqual(copied_custom_data['hi'], custom_data['hi'])
 
         for key in sanitize(strength).keys():
             self.assertEqual(copied_strength[key], strength[key])
 
-        directory.delete()
+        dir.delete()
         copied_dir.delete()
