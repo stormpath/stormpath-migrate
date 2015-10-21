@@ -14,75 +14,105 @@ class DirectoryMigrator(BaseMigrator):
     RESOURCE = 'directory'
     COLLECTION_RESOURCE = 'directories'
 
-    def get_strength(self, dir):
+    def __init__(self, destination_client, source_directory):
+        self.destination_client = destination_client
+        self.source_directory = source_directory
+        self.destination_directory = None
+
+    def get_custom_data(self):
+        """
+        Retrieve the CustomData.
+
+        :rtype: object (or None)
+        :returns: The CustomData object, or None.
+        """
+        try:
+            dict(self.source_directory.custom_data)
+            return self.source_directory.custom_data
+        except StormpathError, err:
+            print '[SOURCE] | [ERROR]: Could not fetch CustomData for Directory:', self.source_directory.href
+            print err
+
+    def get_strength(self):
         """
         Retrieve the Strength.
 
         :rtype: object (or None)
         :returns: The Strength, or None.
         """
-        if self.verbose:
-            print '[SOURCE]: Attempting to fetch Strength for Directory:', dir.href
-
         try:
-            strength = dir.password_policy.strength
+            strength = self.source_directory.password_policy.strength
             dict(strength)
             return strength
         except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not fetch Strength for Directory:', dir.href
+            print '[SOURCE] | [ERROR]: Could not fetch Strength for Directory:', self.source_directory.href
             print err
 
-    def copy_strength(self, dir, strength):
+    def copy_dir(self):
         """
-        Copy the Strength rules to the given Directory.
+        Copy the source Directory over into the destination Tenant.
 
-        :param obj dir: The Directory to use.
-        :param obj strength: The Strength to copy.
+        :rtype: object (or None)
+        :returns: The copied Directory, or None.
+        """
+        try:
+            data = {
+                'description': self.source_directory.description,
+                'name': self.source_directory.name,
+                'status': self.source_directory.status,
+            }
+
+            if dict(self.source_directory.provider).get('provider_id') != 'stormpath':
+                data['provider'] = sanitize(self.source_directory.provider)
+
+            self.destination_directory = self.destination_client.directories.create(data)
+            return self.destination_directory
+        except StormpathError, err:
+            print '[SOURCE] | [ERROR]: Could not copy Directory:', self.source_directory.href
+            print err
+
+    def copy_custom_data(self):
+        """
+        Copy CustomData to the destination Directory.
+
         :rtype: object (or None)
         :returns: The copied Strength, or None.
         """
-        if self.verbose:
-            print '[SOURCE]: Attempting to copy Strength rules for Directory:', dir.name
-
         try:
-            copied_strength = dir.password_policy.strength
+            source_custom_data = self.source_directory.custom_data
+            copied_custom_data = self.destination_directory.custom_data
+
+            for key, value in sanitize(source_custom_data).iteritems():
+                copied_custom_data[key] = value
+
+            copied_custom_data.save()
+            return copied_custom_data
+        except StormpathError, err:
+            print '[SOURCE] | [ERROR]: Could not copy CustomData for Directory:', self.source_directory.href
+            print err
+
+    def copy_strength(self):
+        """
+        Copy the Strength rules to the given Directory.
+
+        :rtype: object (or None)
+        :returns: The copied Strength, or None.
+        """
+        try:
+            source_strength = self.source_directory.password_policy.strength
+            copied_strength = self.destination_directory.password_policy.strength
+
             for field in copied_strength.writable_attrs:
-                copied_strength[field] = strength[field]
+                copied_strength[field] = source_strength[field]
 
             copied_strength.save()
 
             return copied_strength
         except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy Directory:', dir.name
+            print '[SOURCE] | [ERROR]: Could not copy Strength rules Directory:', self.source_directory.href
             print err
 
-    def copy_dir(self, dir):
-        """
-        Copy the source Directory over into the destination Tenant.
-
-        :param obj dir: The Directory to copy.
-        :rtype: object (or None)
-        :returns: The copied Directory, or None.
-        """
-        if self.verbose:
-            print '[SOURCE]: Attempting to copy Directory:', dir.name
-
-        try:
-            data = {
-                'description': dir.description,
-                'name': dir.name,
-                'status': dir.status,
-            }
-
-            if dict(dir.provider).get('provider_id') != 'stormpath':
-                data['provider'] = sanitize(dir.provider)
-
-            return self.dst.directories.create(data)
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy Directory:', dir.name
-            print err
-
-    def migrate(self, dir):
+    def migrate(self):
         """
         Migrates one Directory to another Tenant =)  Won't stop until the
         migration is complete.
@@ -93,27 +123,21 @@ class DirectoryMigrator(BaseMigrator):
         way we avoid emailing users unnecessarily when a Directory has Workflows
         enabled.
 
-        :param obj dir: The source Directory to copy.
+        :rtype: object (or None)
+        :returns: The migrated Directory, or None.
         """
-        custom_data = None
-        strength = None
         copied_dir = None
         copied_custom_data = None
         copied_strength = None
 
-        while not custom_data:
-            custom_data = self.get_custom_data(dir)
-
-        while not strength:
-            strength = self.get_strength(dir)
-
         while not copied_dir:
-            copied_dir = self.copy_dir(dir=dir)
+            copied_dir = self.copy_dir()
 
         while not copied_custom_data:
-            copied_custom_data = self.copy_custom_data(resource=copied_dir, custom_data=custom_data)
+            copied_custom_data = self.copy_custom_data()
 
         while not copied_strength:
-            copied_strength = self.copy_strength(dir=copied_dir, strength=strength)
+            copied_strength = self.copy_strength()
 
+        print 'Successfully copied Directory:', copied_dir.name
         return copied_dir
