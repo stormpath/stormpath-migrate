@@ -76,7 +76,7 @@ class DirectoryMigrator(BaseMigrator):
         Copy CustomData to the destination Directory.
 
         :rtype: object (or None)
-        :returns: The copied Strength, or None.
+        :returns: The copied CustomData, or None.
         """
         try:
             source_custom_data = self.source_directory.custom_data
