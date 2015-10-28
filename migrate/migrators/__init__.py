@@ -9,4 +9,5 @@ from .account import AccountMigrator
 from .application import ApplicationMigrator
 from .directory import DirectoryMigrator
 from .group import GroupMigrator
+from .organization import OrganizationMigrator
 from .tenant import TenantMigrator
