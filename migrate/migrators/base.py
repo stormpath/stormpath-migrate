@@ -1,12 +1,6 @@
 """Base Migrator class."""
 
 
-from stormpath.client import Client
-from stormpath.error import Error as StormpathError
-
-from migrate.utils import sanitize
-
-
 class BaseMigrator(object):
     """"
     This class provides a template for all other migrators.
