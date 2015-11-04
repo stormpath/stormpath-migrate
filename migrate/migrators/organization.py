@@ -89,5 +89,5 @@ class OrganizationMigrator(BaseMigrator):
         while not copied_custom_data:
             copied_custom_data = self.copy_custom_data()
 
-        print 'Successfully copied Organization:', copied_org.href
+        print 'Successfully copied Organization:', copied_org.name
         return copied_org
