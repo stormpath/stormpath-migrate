@@ -34,7 +34,7 @@ class AccountMigratorTest(TestCase):
             'middle_name': uuid4().hex,
             'surname': uuid4().hex,
             'email': uuid4().hex + '@test.com',
-            'password': uuid4().hex + uuid4().hex.upper() + '!',
+            'password': self.random_password(),
             'status': 'ENABLED',
         })
 
