@@ -9,6 +9,7 @@ from .account import AccountMigrator
 from .account_store_mapping import ApplicationAccountStoreMappingMigrator
 from .application import ApplicationMigrator
 from .directory import DirectoryMigrator
+from .directory_workflow import DirectoryWorkflowMigrator
 from .group import GroupMigrator
 from .group_membership import GroupMembershipMigrator
 from .organization import OrganizationMigrator
