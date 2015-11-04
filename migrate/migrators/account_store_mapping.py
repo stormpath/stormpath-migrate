@@ -46,20 +46,11 @@ class ApplicationAccountStoreMappingMigrator(BaseMigrator):
             klass = self.source_account_store.__class__.__name__
 
             if klass == 'Directory':
-                self.destination_account_store = tenant.directories.search({
-                    'description': self.source_account_store.description,
-                    'name': self.source_account_store.name,
-                })[0]
+                self.destination_account_store = tenant.directories.search({'name': self.source_account_store.name})[0]
             elif klass == 'Organization':
-                self.destination_account_store = tenant.organizations.search({
-                    'description': self.source_account_store.description,
-                    'name': self.source_account_store.name,
-                })[0]
+                self.destination_account_store = tenant.organizations.search({'name': self.source_account_store.name})[0]
             elif klass == 'Group':
-                self.destination_account_store = tenant.groups.search({
-                    'description': self.source_account_store.description,
-                    'name': self.source_account_store.name,
-                })[0]
+                self.destination_account_store = tenant.groups.search({'name': self.source_account_store.name})[0]
 
             return self.destination_account_store
         except StormpathError, err:
@@ -76,9 +67,6 @@ class ApplicationAccountStoreMappingMigrator(BaseMigrator):
         try:
             self.get_source_account_store()
             destination_account_store = self.get_destination_account_store()
-
-            for mapping in self.destination_application.account_store_mappings:
-                print 'debug:', dict(mapping)
 
             self.destination_account_store_mapping = self.destination_application.account_store_mappings.create({
                 'account_store': destination_account_store,

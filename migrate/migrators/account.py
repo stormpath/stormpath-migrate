@@ -106,5 +106,5 @@ class AccountMigrator(BaseMigrator):
         while not copied_custom_data:
             copied_custom_data = self.copy_custom_data()
 
-        print 'Successfully copied Account:', copied_account.href
+        print 'Successfully copied Account:', copied_account.email
         return copied_account
