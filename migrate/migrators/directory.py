@@ -55,39 +55,43 @@ class DirectoryMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Directory, or None.
         """
-        done = False
-        while not done:
-            try:
-                data = {
-                    'description': self.source_directory.description,
-                    'name': self.source_directory.name,
-                    'status': self.source_directory.status,
-                }
+        matches = self.destination_client.directories.search({'name': self.source_directory.name})
+        if len(matches):
+            self.destination_directory = matches[0]
 
-                if dict(self.source_directory.provider).get('provider_id') != 'stormpath':
-                    data['provider'] = sanitize(self.source_directory.provider)
+        try:
+            data = {
+                'description': self.source_directory.description,
+                'name': self.source_directory.name,
+                'status': self.source_directory.status,
+            }
 
+            if dict(self.source_directory.provider).get('provider_id') != 'stormpath':
+                data['provider'] = sanitize(self.source_directory.provider)
+
+                if self.destination_directory:
+                    print 'Updating provider data for Social Directory:', self.source_directory.name
+                    provider = self.destination_directory.provider
+                    for key, value in data['provider'].iteritems():
+                        setattr(provider, key, value)
+
+                    provider.save()
+
+            if self.destination_directory:
+                for key, value in data.iteritems():
+                    if key == 'provider':
+                        continue
+
+                    setattr(self.destination_directory, key, value)
+
+                self.destination_directory.save()
+            else:
                 self.destination_directory = self.destination_client.directories.create(data)
-                return self.destination_directory
-            except StormpathError, err:
-                if err.status == 409:
-                    matches = len(self.destination_client.directories.search({'name': self.source_directory.name}))
-                    if not matches:
-                        continue
 
-                    to_delete = self.destination_client.directories.search({'name': self.source_directory.name})[0]
-                    try:
-                        to_delete.delete()
-                    except StormpathError, err:
-                        continue
-
-                    print 'Re-creating Directory:', self.source_directory.name
-                    continue
-
-                print '[SOURCE] | [ERROR]: Could not copy Directory:', self.source_directory.name
-                print err
-
-                done = True
+            return self.destination_directory
+        except StormpathError, err:
+            print '[SOURCE] | [ERROR]: Could not copy Directory:', self.source_directory.name
+            print err
 
     def copy_custom_data(self):
         """
