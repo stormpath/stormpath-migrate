@@ -78,6 +78,7 @@ class DirectoryMigrator(BaseMigrator):
                     provider.save()
 
             if self.destination_directory:
+                print 'Updating data for Directory:', self.source_directory.name
                 for key, value in data.iteritems():
                     if key == 'provider':
                         continue
