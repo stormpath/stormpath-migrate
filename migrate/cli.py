@@ -2,7 +2,7 @@
 stormpath-migrate
 
 Usage:
-  stormpath-migrate <src> <dst> [(-f <date> | --from <date>)] [(-v | --verbose)] [(-s <src-url> | --src-url <src-url>)] [(-d <dst-url> | --dst-url <dst-url>)]
+  stormpath-migrate <src> <dst> <passwords> [(-f <date> | --from <date>)] [(-v | --verbose)] [(-s <src-url> | --src-url <src-url>)] [(-d <dst-url> | --dst-url <dst-url>)]
   stormpath-migrate -h | --help
   stormpath-migrate --version
 
@@ -85,6 +85,7 @@ def main():
     migrator = TenantMigrator(
         src = clients[0],
         dst = clients[1],
+        passwords = args['<passwords>'],
         from_date = args['--from'],
         verbose = args['--verbose'],
     )

@@ -1,6 +1,8 @@
 """Our Tenant migrator."""
 
 
+from json import loads
+
 from . import *
 
 
@@ -27,7 +29,21 @@ class TenantMigrator(BaseMigrator):
                 migrator.migrate()
 
             for account in directory.accounts:
-                migrator = AccountMigrator(destination_directory=destination_directory, source_account=account, source_password='asfdasAFDAFDS!!!32423')
+                hash = None
+
+                with open(self.passwords, 'rb') as f:
+                    for raw_data in f:
+                        data = loads(raw_data)
+
+                        if data.get('href') == account.href:
+                            hash = data.get('hash')
+                            break
+
+                if not hash:
+                    print 'SKIPPING ACCOUNT:', account.email, '-- NO PASSWORD HASH FOUND'
+                    continue
+
+                migrator = AccountMigrator(destination_directory=destination_directory, source_account=account, source_password=hash)
                 migrator.migrate()
 
                 for membership in account.group_memberships:

@@ -18,10 +18,10 @@ DST_CLIENT_SECRET = environ['DST_CLIENT_SECRET']
 
 class CreateClientsTest(TestCase):
     def test_returns_two_clients(self):
-        self.assertEqual(len(create_clients(SRC_CLIENT_ID + ':' + SRC_CLIENT_SECRET, DST_CLIENT_ID + ':' + DST_CLIENT_SECRET)), 2)
+        self.assertEqual(len(create_clients(SRC_CLIENT_ID + ':' + SRC_CLIENT_SECRET, DST_CLIENT_ID + ':' + DST_CLIENT_SECRET, 'https://api.stormpath.com/v1', 'https://api.stormpath.com/v1')), 2)
 
     def test_returns_client_objects(self):
-        clients = create_clients(SRC_CLIENT_ID + ':' + SRC_CLIENT_SECRET, DST_CLIENT_ID + ':' + DST_CLIENT_SECRET)
+        clients = create_clients(SRC_CLIENT_ID + ':' + SRC_CLIENT_SECRET, DST_CLIENT_ID + ':' + DST_CLIENT_SECRET, 'https://api.stormpath.com/v1', 'https://api.stormpath.com/v1')
         self.assertIsInstance(clients[0], Client)
         self.assertIsInstance(clients[1], Client)
 

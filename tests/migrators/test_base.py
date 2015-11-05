@@ -23,15 +23,15 @@ class BaseMigratorTest(TestCase):
         self.dst = Client(id=DST_CLIENT_ID, secret=DST_CLIENT_SECRET)
 
     def test_init(self):
-        migrator = BaseMigrator(self.src, self.dst)
+        migrator = BaseMigrator(self.src, self.dst, passwords='hi.txt')
         self.assertEqual(migrator.src, self.src)
         self.assertEqual(migrator.dst, self.dst)
         self.assertEqual(migrator.from_date, None)
         self.assertEqual(migrator.verbose, False)
 
-        migrator = BaseMigrator(self.src, self.dst, verbose=True)
+        migrator = BaseMigrator(self.src, self.dst, passwords='hi.txt', verbose=True)
         self.assertEqual(migrator.verbose, True)
 
     def test_repr(self):
-        migrator = BaseMigrator(self.src, self.dst)
+        migrator = BaseMigrator(self.src, self.dst, passwords='hi.txt')
         self.assertEqual('BaseMigrator()', migrator.__repr__())
