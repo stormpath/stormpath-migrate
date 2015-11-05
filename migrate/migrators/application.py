@@ -55,30 +55,34 @@ class ApplicationMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Application, or None.
         """
-        matches = self.destination_client.applications.search({'name': self.source_application.name})
-        if len(matches):
-            self.destination_application = matches[0]
+        done = False
+        while not done:
+            try:
+                self.destination_application = self.destination_client.applications.create({
+                    'description': self.source_application.description,
+                    'name': self.source_application.name,
+                    'status': self.source_application.status,
+                })
+                return self.destination_application
+            except StormpathError, err:
+                if err.status == 409:
+                    matches = len(self.destination_client.applications.search({'name': self.source_application.name}))
+                    if not matches:
+                        continue
 
-        try:
-            data = {
-                'description': self.source_application.description,
-                'name': self.source_application.name,
-                'status': self.source_application.status,
-            }
+                    to_delete = self.destination_client.applications.search({'name': self.source_application.name})[0]
+                    try:
+                        to_delete.delete()
+                    except StormpathError, err:
+                        continue
 
-            if self.destination_application:
-                print 'Updating data for Application:', self.source_application.name
-                for key, value in data.iteritems():
-                    setattr(self.destination_application, key, value)
+                    print 'Re-creating Application:', self.source_application.name
+                    continue
 
-                self.destination_application.save()
-            else:
-                self.destination_application = self.destination_client.applications.create(data)
+                print '[SOURCE] | [ERROR]: Could not copy Application:', self.source_application.name
+                print err
 
-            return self.destination_application
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy Application:', self.source_application.name
-            print err
+                done = True
 
     def copy_custom_data(self):
         """
