@@ -63,14 +63,19 @@ class GroupMembershipMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Membership, or None.
         """
-        try:
-            self.get_destination_account()
-            self.get_destination_group()
+        self.get_destination_account()
+        self.get_destination_group()
 
+        for membership in self.destination_account.group_memberships:
+            if membership.account.href == self.destination_account.href and membership.group.href == self.destination_group.href:
+                return membership
+
+        try:
             self.destination_group_membership = self.destination_client.group_memberships.create({
                 'account': self.destination_account,
                 'group': self.destination_group,
             })
+
             return self.destination_group_membership
         except StormpathError, err:
             print '[SOURCE] | [ERROR]: Could not copy Membership:', self.source_group_membership.href
