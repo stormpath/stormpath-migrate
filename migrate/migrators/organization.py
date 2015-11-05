@@ -98,14 +98,8 @@ class OrganizationMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The migrated Organization, or None.
         """
-        copied_org = None
-        copied_custom_data = None
-
-        while not copied_org:
-            copied_org = self.copy_organization()
-
-        while not copied_custom_data:
-            copied_custom_data = self.copy_custom_data()
+        copied_org = self.copy_organization()
+        self.copy_custom_data()
 
         print 'Successfully copied Organization:', copied_org.name
         return copied_org

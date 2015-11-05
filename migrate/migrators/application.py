@@ -136,18 +136,9 @@ class ApplicationMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The migrated Application, or None.
         """
-        copied_app = None
-        copied_custom_data = None
-        copied_oauth_policy = None
-
-        while not copied_app:
-            copied_app = self.copy_app()
-
-        while not copied_custom_data:
-            copied_custom_data = self.copy_custom_data()
-
-        while not copied_oauth_policy:
-            copied_oauth_policy = self.copy_oauth_policy()
+        copied_app = self.copy_app()
+        self.copy_custom_data()
+        self.copy_oauth_policy()
 
         print 'Successfully copied Application:', copied_app.name
         return copied_app
