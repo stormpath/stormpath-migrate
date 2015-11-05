@@ -40,15 +40,29 @@ class GroupMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Group, or None.
         """
+        matches = self.destination_directory.groups.search({'name': self.source_group.name})
+        if len(matches):
+            self.destination_group = matches[0]
+
         try:
-            self.destination_group = self.destination_directory.groups.create({
+            data = {
                 'description': self.source_group.description,
                 'name': self.source_group.name,
                 'status': self.source_group.status,
-            })
+            }
+
+            if self.destination_group:
+                print 'Updating data for Group:', self.source_group.name
+                for key, value in data.iteritems():
+                    setattr(self.destination_group, key, value)
+
+                self.destination_group.save()
+            else:
+                self.destination_group = self.destination_directory.groups.create(data)
+
             return self.destination_group
         except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy Group:', self.source_group.href
+            print '[SOURCE] | [ERROR]: Could not copy Group:', self.source_group.name
             print err
 
     def copy_custom_data(self):
