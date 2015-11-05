@@ -39,7 +39,7 @@ I could then run the following command to properly migrate all of my data from
 the SOURCE tenant to the DESTINATION tenant::
 
     $ stormpath-migrate 'xxx:yyy' 'blah:blah' passwords.txt \
-        --src-url https://api.stormpath.com/v1
+        --src-url https://api.stormpath.com/v1 \
         --dst-url https://test.stormpath.io/v1
 
 This will initialize the migration process, and will output to the terminal with
