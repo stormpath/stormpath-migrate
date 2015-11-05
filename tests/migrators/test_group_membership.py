@@ -28,7 +28,7 @@ class GroupMembershipMigratorTest(TestCase):
             'given_name': uuid4().hex,
             'surname': uuid4().hex,
             'email': uuid4().hex + '@test.com',
-            'password': self.random_password(),
+            'password': '$2a$13$7nOY.0Y9BmFUx77cT/3bZO8rTSDbi0a1JPHdzqyp6YexrNTYKZbQ2',
         })
         self.src_membership = self.src_account.add_group(self.src_group)
 
@@ -38,15 +38,12 @@ class GroupMembershipMigratorTest(TestCase):
         migrator = GroupMigrator(destination_directory=self.dst_dir, source_group=self.src_group)
         self.dst_group = migrator.migrate()
 
-        migrator = AccountMigrator(destination_directory=self.dst_dir, source_account=self.src_account, source_password=self.random_password())
+        migrator = AccountMigrator(destination_directory=self.dst_dir, source_account=self.src_account, source_password='$2a$13$7nOY.0Y9BmFUx77cT/3bZO8rTSDbi0a1JPHdzqyp6YexrNTYKZbQ2')
         self.dst_account = migrator.migrate()
 
     def tearDown(self):
         self.src_dir.delete()
         self.dst_dir.delete()
-
-    def random_password(self):
-        return uuid4().hex + uuid4().hex.upper() + '!'
 
     def test_get_destination_account(self):
         migrator = GroupMembershipMigrator(destination_client=self.dst, source_group_membership=self.src_membership)

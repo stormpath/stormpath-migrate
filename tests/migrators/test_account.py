@@ -34,15 +34,12 @@ class AccountMigratorTest(TestCase):
             'middle_name': uuid4().hex,
             'surname': uuid4().hex,
             'email': uuid4().hex + '@test.com',
-            'password': self.random_password(),
+            'password': '$2a$13$7nOY.0Y9BmFUx77cT/3bZO8rTSDbi0a1JPHdzqyp6YexrNTYKZbQ2',
             'status': 'ENABLED',
         })
 
         migrator = DirectoryMigrator(destination_client=self.dst, source_directory=self.dir)
         self.dst_dir = migrator.migrate()
-
-    def random_password(self):
-        return uuid4().hex + uuid4().hex.upper() + '!'
 
     def tearDown(self):
         self.dir.delete()
@@ -52,7 +49,7 @@ class AccountMigratorTest(TestCase):
         migrator = AccountMigrator(
             destination_directory = self.dst_dir,
             source_account = self.account,
-            source_password = self.random_password()
+            source_password = '$2a$13$7nOY.0Y9BmFUx77cT/3bZO8rTSDbi0a1JPHdzqyp6YexrNTYKZbQ2',
         )
         custom_data = migrator.get_custom_data()
 
@@ -62,7 +59,7 @@ class AccountMigratorTest(TestCase):
         migrator = AccountMigrator(
             destination_directory = self.dst_dir,
             source_account = self.account,
-            source_password = self.random_password()
+            source_password = '$2a$13$7nOY.0Y9BmFUx77cT/3bZO8rTSDbi0a1JPHdzqyp6YexrNTYKZbQ2',
         )
         copied_account = migrator.copy_account()
 
@@ -77,7 +74,7 @@ class AccountMigratorTest(TestCase):
         migrator = AccountMigrator(
             destination_directory = self.dst_dir,
             source_account = self.account,
-            source_password = self.random_password()
+            source_password = '$2a$13$7nOY.0Y9BmFUx77cT/3bZO8rTSDbi0a1JPHdzqyp6YexrNTYKZbQ2',
         )
         migrator.copy_account()
         copied_data = migrator.copy_custom_data()
@@ -88,7 +85,7 @@ class AccountMigratorTest(TestCase):
         migrator = AccountMigrator(
             destination_directory = self.dst_dir,
             source_account = self.account,
-            source_password = self.random_password()
+            source_password = '$2a$13$7nOY.0Y9BmFUx77cT/3bZO8rTSDbi0a1JPHdzqyp6YexrNTYKZbQ2',
         )
 
         copied_account = migrator.migrate()
