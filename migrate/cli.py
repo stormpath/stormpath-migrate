@@ -2,7 +2,7 @@
 stormpath-migrate
 
 Usage:
-  stormpath-migrate <src> <dst> [(-f <date> | --from <date>)] [(-v | --verbose)]
+  stormpath-migrate <src> <dst> [(-f <date> | --from <date>)] [(-v | --verbose)] [(-s <src-url> | --src-url <src-url>)] [(-d <dst-url> | --dst-url <dst-url>)]
   stormpath-migrate -h | --help
   stormpath-migrate --version
 
@@ -10,8 +10,6 @@ Options:
   -h --help                         Show this screen.
   -v --verbose                      Show verbose output.
   --version                         Show version.
-  -i <id> | --id <id>               Stormpath API key id.
-  -s <secret> | --secret <secret>   Stormpath API key secret.
   -f <date> | --from <date>         Only migrate resources created >= this date.  [ex: 2010-01-03]
 
 Example:
@@ -50,15 +48,17 @@ def validate_credentials(src, dst):
 
         id, secret = val.split(':')
         if len(id) == 0 or len(secret) == 0:
-            raise ValueError('Invalid credentials specified. Use <id:secret> format.') 
+            raise ValueError('Invalid credentials specified. Use <id:secret> format.')
 
 
-def create_clients(src, dst):
+def create_clients(src, dst, src_url, dst_url):
     """
     Create our local Stormpath Client objects used for the migration.
 
     :param str src: The user supplied Stormpath source credentials.
     :param str dst: The user supplied Stormpath destination credentials.
+    :param str src_url: The Stormpath Base URL.
+    :param str dst: The Stormpath Base URL.
     :rtype: tuple
     :returns: A tuple consisting of an initialized source Client object, as well
         as an initialized destination Client object.
@@ -67,8 +67,8 @@ def create_clients(src, dst):
     dst_id, dst_secret = dst.split(':')
 
     return (
-        Client(id=src_id, secret=src_secret),
-        Client(id=dst_id, secret=dst_secret),
+        Client(id=src_id, secret=src_secret, base_url=src_url),
+        Client(id=dst_id, secret=dst_secret, base_url=dst_url),
     )
 
 
@@ -76,8 +76,11 @@ def main():
     """Main CLI entrypoint."""
     args = docopt(__doc__, version=VERSION)
 
-    validate_credentials(src, dst)
-    clients = create_clients(src, dst)
+    src_url = args['<src-url>'] or 'https://api.stormpath.com/v1'
+    dst_url = args['<dst-url>'] or 'https://api.stormpath.com/v1'
+
+    validate_credentials(args['<src>'], args['<dst>'])
+    clients = create_clients(args['<src>'], args['<dst>'], src_url=src_url, dst_url=dst_url)
 
     migrator = TenantMigrator(
         src = clients[0],
@@ -85,3 +88,4 @@ def main():
         from_date = args['--from'],
         verbose = args['--verbose'],
     )
+    migrator.migrate()
