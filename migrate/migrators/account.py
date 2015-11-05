@@ -41,47 +41,47 @@ class AccountMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Account, or None.
         """
-        done = False
-        while not done:
-            try:
-                if dict(self.source_account.provider_data).get('provider_id') != 'stormpath':
-                    self.destination_account = self.destination_directory.accounts.create({
-                        'provider_data': {
-                            'provider_id': self.source_account.provider_data.provider_id,
-                            'access_token': self.source_account.provider_data.access_token,
-                        }
-                    })
-                else:
-                    self.destination_account = self.destination_directory.accounts.create({
-                        'username': self.source_account.username,
-                        'given_name': self.source_account.given_name,
-                        'middle_name': self.source_account.middle_name,
-                        'surname': self.source_account.surname,
-                        'email': self.source_account.email,
-                        'password': self.source_password,
-                        'status': 'ENABLED',
-                    }, password_format='mcf')
+        matches = self.destination_directory.accounts.search({'email': self.source_account.email})
+        if len(matches):
+            self.destination_account = matches[0]
 
-                return self.destination_account
-            except StormpathError, err:
-                if err.status == 409:
-                    matches = len(self.destination_directory.accounts.search({'email': self.source_account.email}))
-                    if not matches:
-                        continue
+        try:
+            data = {
+                'username': self.source_account.username,
+                'given_name': self.source_account.given_name,
+                'middle_name': self.source_account.middle_name,
+                'surname': self.source_account.surname,
+                'email': self.source_account.email,
+                'password': self.source_password,
+                'status': 'ENABLED',
+            }
 
-                to_delete = self.destination_directory.accounts.search({'email': self.source_account.email})[0]
-                try:
-                    to_delete.delete()
-                except StormpathError, err:
-                    continue
+            if dict(self.source_account.provider_data).get('provider_id') != 'stormpath' and not self.destination_account:
+                self.destination_account = self.destination_directory.accounts.create({
+                    'provider_data': {
+                        'provider_id': self.source_account.provider_data.provider_id,
+                        'access_token': self.source_account.provider_data.access_token,
+                    }
+                })
+            elif self.destination_account:
+                print 'Updating data for Account:', self.source_account.email
 
-                print 'Re-creating Account:', self.source_account.email
-                continue
+                # We don't support importing existing password hashes for
+                # ALREADY existing user accounts, so we'll just skip the
+                # password updating stuff here.
+                del data['password']
 
-                print '[SOURCE] | [ERROR]: Could not copy Account:', self.source_account.email
-                print err
+                for key, value in data.iteritems():
+                    setattr(self.destination_account, key, value)
 
-                done = True
+                self.destination_account.save()
+            else:
+                self.destination_account = self.destination_directory.accounts.create(data, password_format='mcf')
+
+            return self.destination_account
+        except StormpathError, err:
+            print '[SOURCE] | [ERROR]: Could not copy Account:', self.source_account.email
+            print err
 
     def copy_custom_data(self):
         """
