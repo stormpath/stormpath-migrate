@@ -55,21 +55,39 @@ class DirectoryMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Directory, or None.
         """
-        try:
-            data = {
-                'description': self.source_directory.description,
-                'name': self.source_directory.name,
-                'status': self.source_directory.status,
-            }
+        done = False
+        while not done:
+            try:
+                data = {
+                    'description': self.source_directory.description,
+                    'name': self.source_directory.name,
+                    'status': self.source_directory.status,
+                }
 
-            if dict(self.source_directory.provider).get('provider_id') != 'stormpath':
-                data['provider'] = sanitize(self.source_directory.provider)
+                if dict(self.source_directory.provider).get('provider_id') != 'stormpath':
+                    data['provider'] = sanitize(self.source_directory.provider)
 
-            self.destination_directory = self.destination_client.directories.create(data)
-            return self.destination_directory
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy Directory:', self.source_directory.href
-            print err
+                self.destination_directory = self.destination_client.directories.create(data)
+                return self.destination_directory
+            except StormpathError, err:
+                if err.status == 409:
+                    matches = len(self.destination_client.directories.search({'name': self.source_directory.name}))
+                    if not matches:
+                        continue
+
+                    to_delete = self.destination_client.directories.search({'name': self.source_directory.name})[0]
+                    try:
+                        to_delete.delete()
+                    except StormpathError, err:
+                        continue
+
+                    print 'Re-creating Directory:', self.source_directory.name
+                    continue
+
+                print '[SOURCE] | [ERROR]: Could not copy Directory:', self.source_directory.name
+                print err
+
+                done = True
 
     def copy_custom_data(self):
         """
@@ -126,18 +144,9 @@ class DirectoryMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The migrated Directory, or None.
         """
-        copied_dir = None
-        copied_custom_data = None
-        copied_strength = None
-
-        while not copied_dir:
-            copied_dir = self.copy_dir()
-
-        while not copied_custom_data:
-            copied_custom_data = self.copy_custom_data()
-
-        while not copied_strength:
-            copied_strength = self.copy_strength()
+        copied_dir = self.copy_dir()
+        self.copy_custom_data()
+        self.copy_strength()
 
         print 'Successfully copied Directory:', copied_dir.name
         return copied_dir
