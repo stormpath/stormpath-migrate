@@ -68,6 +68,10 @@ class ApplicationAccountStoreMappingMigrator(BaseMigrator):
             self.get_source_account_store()
             destination_account_store = self.get_destination_account_store()
 
+            for mapping in self.destination_application.account_store_mappings:
+                if mapping.account_store.href == destination_account_store.href and mapping.application.href == self.destination_application.href:
+                    return mapping
+
             self.destination_account_store_mapping = self.destination_application.account_store_mappings.create({
                 'account_store': destination_account_store,
                 'application': self.destination_application,
@@ -154,6 +158,10 @@ class OrganizationAccountStoreMappingMigrator(BaseMigrator):
         try:
             self.get_source_account_store()
             destination_account_store = self.get_destination_account_store()
+
+            for mapping in self.destination_organization.account_store_mappings:
+                if mapping.account_store.href == destination_account_store.href and mapping.organization.href == self.destination_organization.href:
+                    return mapping
 
             self.destination_account_store_mapping = self.destination_organization._client.organization_account_store_mappings.create({
                 'account_store': destination_account_store,
