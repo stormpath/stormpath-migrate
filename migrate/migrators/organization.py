@@ -40,17 +40,35 @@ class OrganizationMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Organization, or None.
         """
-        try:
-            self.destination_organization = self.destination_client.organizations.create({
-                'description': self.source_organization.description,
-                'name': self.source_organization.name,
-                'name_key': self.source_organization.name_key,
-                'status': self.source_organization.status,
-            })
-            return self.destination_organization
-        except StormpathError, err:
+        done = False
+        while not done:
+            try:
+                self.destination_organization = self.destination_client.tenant.organizations.create({
+                    'description': self.source_organization.description,
+                    'name': self.source_organization.name,
+                    'name_key': self.source_organization.name_key,
+                    'status': self.source_organization.status,
+                })
+                return self.destination_organization
+            except StormpathError, err:
+                if err.status == 409:
+                    matches = len(self.destination_client.tenant.organizations.search({'name': self.source_organization.name}))
+                    if not matches:
+                        continue
+
+                    to_delete = self.destination_client.tenant.organizations.search({'name': self.source_organization.name})[0]
+                    try:
+                        to_delete.delete()
+                    except StormpathError, err:
+                        continue
+
+                    print 'Re-creating Organization:', self.source_organization.name
+                    continue
+
             print '[SOURCE] | [ERROR]: Could not copy Organization:', self.source_organization.href
             print err
+
+            done = True
 
     def copy_custom_data(self):
         """
