@@ -40,7 +40,7 @@ class TenantMigrator(BaseMigrator):
                             break
 
                 if not hash:
-                    print 'SKIPPING ACCOUNT:', account.email, '-- NO PASSWORD HASH FOUND'
+                    print '[SOURCE] | [ERROR]: Skipping Account (no password hash found):', account.email
                     continue
 
                 migrator = AccountMigrator(destination_directory=destination_directory, source_account=account, source_password=hash)
