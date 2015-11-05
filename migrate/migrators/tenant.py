@@ -36,7 +36,7 @@ class TenantMigrator(BaseMigrator):
                         data = loads(raw_data)
 
                         if data.get('href') == account.href:
-                            hash = data.get('hash')
+                            hash = data.get('password')
                             break
 
                 if not hash:

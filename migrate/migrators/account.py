@@ -58,8 +58,7 @@ class AccountMigrator(BaseMigrator):
                     'email': self.source_account.email,
                     'password': self.source_password,
                     'status': 'ENABLED',
-                #}, password_format='mcf')
-                })
+                }, password_format='mcf')
 
             return self.destination_account
         except StormpathError, err:
