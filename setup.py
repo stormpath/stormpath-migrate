@@ -32,7 +32,7 @@ class RunTests(Command):
 
 setup(
     name = 'stormpath-migrate',
-    version = '1.0.1',
+    version = '1.0.2',
     description = 'Migrate a Stormpath tenant from one place to another.',
     long_description = long_description,
     url = 'https://github.com/rdegges/stormpath-migrate',
