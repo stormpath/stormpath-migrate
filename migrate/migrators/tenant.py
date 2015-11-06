@@ -30,6 +30,7 @@ class TenantMigrator(BaseMigrator):
 
             for account in directory.accounts:
                 hash = None
+                random_password = False
 
                 with open(self.passwords, 'rb') as f:
                     for raw_data in f:
@@ -40,10 +41,10 @@ class TenantMigrator(BaseMigrator):
                             break
 
                 if not hash:
-                    print '[SOURCE] | [ERROR]: Skipping Account (no password hash found):', account.email
-                    continue
+                    random_password = True
+                    print '[SOURCE] | [ERROR]: No password hash found for Account:', account.email
 
-                migrator = AccountMigrator(destination_directory=destination_directory, source_account=account, source_password=hash)
+                migrator = AccountMigrator(destination_directory=destination_directory, source_account=account, source_password=hash, random_password=random_password)
                 migrator.migrate()
 
                 for membership in account.group_memberships:

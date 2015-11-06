@@ -1,6 +1,8 @@
 """Our Account Migrator."""
 
 
+from uuid import uuid4
+
 from stormpath.error import Error as StormpathError
 
 from . import BaseMigrator
@@ -14,11 +16,12 @@ class AccountMigrator(BaseMigrator):
     RESOURCE = 'account'
     COLLECTION_RESOURCE = 'accounts'
 
-    def __init__(self, destination_directory, source_account, source_password):
+    def __init__(self, destination_directory, source_account, source_password, random_password=False):
         self.destination_directory = destination_directory
         self.source_account = source_account
         self.source_password = source_password
         self.destination_account = None
+        self.random_password = random_password
 
     def get_custom_data(self):
         """
@@ -76,7 +79,11 @@ class AccountMigrator(BaseMigrator):
 
                 self.destination_account.save()
             else:
-                self.destination_account = self.destination_directory.accounts.create(data, password_format='mcf')
+                if not self.random_password:
+                    self.destination_account = self.destination_directory.accounts.create(data, password_format='mcf')
+                else:
+                    data['password'] = uuid4().hex + uuid4().hex.upper() + '!'
+                    self.destination_account = self.destination_directory.accounts.create(data)
 
             return self.destination_account
         except StormpathError, err:
