@@ -131,5 +131,5 @@ class AccountMigrator(BaseMigrator):
         if copied_account:
             self.copy_custom_data()
 
-        print 'Successfully copied Account:', copied_account.email
-        return copied_account
+            print 'Successfully copied Account:', copied_account.email
+            return copied_account

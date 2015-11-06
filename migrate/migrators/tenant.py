@@ -45,7 +45,10 @@ class TenantMigrator(BaseMigrator):
                     print '[SOURCE] | [ERROR]: No password hash found for Account:', account.email
 
                 migrator = AccountMigrator(destination_directory=destination_directory, source_account=account, source_password=hash, random_password=random_password)
-                migrator.migrate()
+                migrated_account = migrator.migrate()
+
+                if not migrated_account:
+                    continue
 
                 for membership in account.group_memberships:
                     migrator = GroupMembershipMigrator(destination_client=self.dst, source_group_membership=membership)
