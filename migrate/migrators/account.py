@@ -56,7 +56,7 @@ class AccountMigrator(BaseMigrator):
                 'surname': self.source_account.surname,
                 'email': self.source_account.email,
                 'password': self.source_password,
-                'status': 'ENABLED',
+                'status': self.source_account.status,
             }
 
             if dict(self.source_account.provider_data).get('provider_id') != 'stormpath' and not self.destination_account:
