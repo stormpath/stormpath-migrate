@@ -122,7 +122,8 @@ class AccountMigrator(BaseMigrator):
         :returns: The migrated Account, or None.
         """
         copied_account = self.copy_account()
-        self.copy_custom_data()
+        if copied_account:
+            self.copy_custom_data()
 
         print 'Successfully copied Account:', copied_account.email
         return copied_account
