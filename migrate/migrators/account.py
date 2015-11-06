@@ -59,6 +59,8 @@ class AccountMigrator(BaseMigrator):
                 'status': self.source_account.status,
             }
 
+            print 'DEBUG! Copying account:', data['email'], 'with status:', data['status']
+
             if dict(self.source_account.provider_data).get('provider_id') != 'stormpath' and not self.destination_account:
                 self.destination_account = self.destination_directory.accounts.create({
                     'provider_data': {
