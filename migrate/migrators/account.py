@@ -99,6 +99,12 @@ class AccountMigrator(BaseMigrator):
         """
         try:
             source_custom_data = self.source_account.custom_data
+            if not source_custom_data:
+                return
+
+            if not self.destination_account:
+                return
+
             copied_custom_data = self.destination_account.custom_data
 
             for key, value in sanitize(source_custom_data).iteritems():
