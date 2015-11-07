@@ -67,7 +67,7 @@ class AccountMigrator(BaseMigrator):
                         'provider_id': self.source_account.provider_data.provider_id,
                         'access_token': self.source_account.provider_data.access_token,
                     }
-                })
+                }, registration_workflow_enabled=False)
             elif self.destination_account:
                 print 'Updating data for Account:', self.source_account.email
 
@@ -82,10 +82,10 @@ class AccountMigrator(BaseMigrator):
                 self.destination_account.save()
             else:
                 if not self.random_password:
-                    self.destination_account = self.destination_directory.accounts.create(data, password_format='mcf')
+                    self.destination_account = self.destination_directory.accounts.create(data, password_format='mcf', registration_workflow_enabled=False)
                 else:
                     data['password'] = uuid4().hex + uuid4().hex.upper() + '!'
-                    self.destination_account = self.destination_directory.accounts.create(data)
+                    self.destination_account = self.destination_directory.accounts.create(data, registration_workflow_enabled=False)
 
             return self.destination_account
         except StormpathError, err:
