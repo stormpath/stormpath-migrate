@@ -13,4 +13,5 @@ from .directory_workflow import DirectoryWorkflowMigrator
 from .group import GroupMigrator
 from .group_membership import GroupMembershipMigrator
 from .organization import OrganizationMigrator
+from .substitution import SubstitutionMigrator
 from .tenant import TenantMigrator
