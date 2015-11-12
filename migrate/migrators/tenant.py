@@ -75,3 +75,6 @@ class TenantMigrator(BaseMigrator):
             for mapping in application.account_store_mappings:
                 migrator = ApplicationAccountStoreMappingMigrator(destination_application=destination_application, source_account_store_mapping=mapping)
                 migrator.migrate()
+
+        migrator = SubstitutionMigrator(source_client=self.src, destination_client=self.dst)
+        migrator.migrate()
