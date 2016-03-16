@@ -1,13 +1,31 @@
 stormpath-migrate
 =================
 
+.. image:: https://img.shields.io/pypi/v/stormpath-migrate.svg
+    :alt: stormpath-migrate Release
+    :target: https://pypi.python.org/pypi/stormpath-migrate
+
+.. image:: https://img.shields.io/pypi/dm/stormpath-migrate.svg
+    :alt: stormpath-migrate Downloads
+    :target: https://pypi.python.org/pypi/stormpath-migrate
+
+.. image:: https://api.codacy.com/project/badge/grade/e9a2986f7dcc49bb961d60601ba0b599
+    :alt: stormpath-migrate Code Quality
+    :target: https://www.codacy.com/app/r/stormpath-migrate
+
+.. image:: https://img.shields.io/travis/stormpath/stormpath-migrate.svg
+    :alt: stormpath-migrate Build
+    :target: https://travis-ci.org/stormpath/stormpath-migrate
+
 *Migrate a Stormpath tenant from one place to another.*
 
 
 Installation
 ------------
 
-To install this library, use Pip::
+To install this library, use Pip:
+
+.. code-block:: console
 
     $ pip install stormpath-migrate
 
@@ -36,7 +54,9 @@ talking with the Stormpath engineering team, and have a file named
 ``passwords.txt`` which contains my JSON delimited data.
 
 I could then run the following command to properly migrate all of my data from
-the SOURCE tenant to the DESTINATION tenant::
+the SOURCE tenant to the DESTINATION tenant:
+
+.. code-block:: console
 
     $ stormpath-migrate 'xxx:yyy' 'blah:blah' passwords.txt \
         --src-url https://api.stormpath.com/v1 \
