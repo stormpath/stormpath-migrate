@@ -23,7 +23,7 @@ stormpath-migrate
 Installation
 ------------
 
-To install this library, use Pip:
+To install this library, use pip:
 
 .. code-block:: console
 
