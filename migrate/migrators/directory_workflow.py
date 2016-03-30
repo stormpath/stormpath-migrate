@@ -175,7 +175,7 @@ class DirectoryWorkflowMigrator(BaseMigrator):
             self.destination_reset_success_email_template.save()
 
             return self.destination_directory
-        except StormpathError, err:
+        except (AttributeError, StormpathError) as err:
             print '[SOURCE] | [ERROR]: Could not copy Workflow:', self.source_directory.href
             print err
 
