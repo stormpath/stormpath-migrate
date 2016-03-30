@@ -173,11 +173,11 @@ class DirectoryWorkflowMigrator(BaseMigrator):
             self.destination_reset_success_email_template.subject = self.reset_success_email_template.subject
             self.destination_reset_success_email_template.text_body = self.reset_success_email_template.text_body
             self.destination_reset_success_email_template.save()
-
-            return self.destination_directory
         except (AttributeError, StormpathError) as err:
             print '[SOURCE] | [ERROR]: Could not copy Workflow:', self.source_directory.href
             print err
+
+        return self.destination_directory
 
     def migrate(self):
         """
