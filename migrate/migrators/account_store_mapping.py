@@ -170,10 +170,13 @@ class OrganizationAccountStoreMappingMigrator(BaseMigrator):
                 'is_default_account_store': self.source_account_store_mapping.is_default_account_store,
                 'is_default_group_store': self.source_account_store_mapping.is_default_group_store,
             })
-            return self.destination_account_store_mapping
         except StormpathError, err:
             print '[SOURCE] | [ERROR]: Could not copy Mapping:', self.source_account_store_mapping.href
             print err
+
+        # HACK TO SUPPORT SPECIAL LIMITS ON MAPPINGS
+        # return self.destination_account_store_mapping
+        return True
 
     def migrate(self):
         """
