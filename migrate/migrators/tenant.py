@@ -24,11 +24,6 @@ class TenantMigrator(BaseMigrator):
             migrator = DirectoryMigrator(destination_client=self.dst, source_directory=directory)
             destination_directory = migrator.migrate()
 
-            # HACK TO MAKE SURE GROUPS CAN BE COPIED
-            destination_directory_status = destination_directory.status
-            destination_directory.status = 'ENABLED'
-            destination_directory.save()
-
             for group in directory.groups:
                 migrator = GroupMigrator(destination_directory=destination_directory, source_group=group)
                 migrator.migrate()
@@ -59,9 +54,6 @@ class TenantMigrator(BaseMigrator):
                     migrator = GroupMembershipMigrator(destination_client=self.dst, source_group_membership=membership)
                     migrator.migrate()
 
-            destination_directory.status = destination_directory_status
-            destination_directory.save()
-
             migrator = DirectoryWorkflowMigrator(destination_directory=destination_directory, source_directory=directory)
             migrator.migrate()
 
@@ -69,17 +61,9 @@ class TenantMigrator(BaseMigrator):
             migrator = OrganizationMigrator(destination_client=self.dst, source_organization=organization)
             destination_organization = migrator.migrate()
 
-            # HACK TO MAKE SURE MAPPINGS CAN BE COPIED
-            destination_organization_status = destination_organization.status
-            destination_organization.status = 'ENABLED'
-            destination_organization.save()
-
             for mapping in organization.account_store_mappings:
                 migrator = OrganizationAccountStoreMappingMigrator(destination_organization=destination_organization, source_account_store_mapping=mapping)
                 migrator.migrate()
-
-            destination_organization.status = destination_organization_status
-            destination_organization.save()
 
         for application in self.src.applications:
             if application.name == 'Stormpath':
@@ -88,17 +72,9 @@ class TenantMigrator(BaseMigrator):
             migrator = ApplicationMigrator(destination_client=self.dst, source_application=application)
             destination_application = migrator.migrate()
 
-            # HACK TO MAKE SURE MAPPINGS CAN BE COPIED
-            destination_application_status = destination_application.status
-            destination_application.status = 'ENABLED'
-            destination_application.save()
-
             for mapping in application.account_store_mappings:
                 migrator = ApplicationAccountStoreMappingMigrator(destination_application=destination_application, source_account_store_mapping=mapping)
                 migrator.migrate()
-
-            destination_application.status = destination_application_status
-            destination_application.save()
 
         migrator = SubstitutionMigrator(source_client=self.src, destination_client=self.dst)
         migrator.migrate()
