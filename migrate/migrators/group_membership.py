@@ -16,6 +16,8 @@ class GroupMembershipMigrator(BaseMigrator):
     def __init__(self, destination_client, source_group_membership):
         self.destination_client = destination_client
         self.source_group_membership = source_group_membership
+        self.destination_account = None
+        self.destination_group = None
         self.destination_group_membership = None
 
     def get_destination_account(self):
@@ -31,11 +33,11 @@ class GroupMembershipMigrator(BaseMigrator):
 
             destination_directory = self.destination_client.directories.search({'name': source_directory.name})[0]
             self.destination_account = destination_directory.accounts.search({'email': source_account.email})[0]
-
-            return self.destination_account
-        except StormpathError, err:
+        except (IndexError, StormpathError) as err:
             print '[SOURCE] | [ERROR]: Could not fetch Account for Membership:', self.source_group_membership.href
             print err
+
+        return self.destination_account
 
     def get_destination_group(self):
         """
@@ -50,11 +52,11 @@ class GroupMembershipMigrator(BaseMigrator):
 
             destination_directory = self.destination_client.directories.search({'name': source_directory.name})[0]
             self.destination_group = destination_directory.groups.search({'name': source_group.name})[0]
-
-            return self.destination_group
-        except StormpathError, err:
+        except (IndexError, StormpathError) as err:
             print '[SOURCE] | [ERROR]: Could not fetch Group for Membership:', self.source_group_membership.href
             print err
+
+        return self.destination_group
 
     def copy_membership(self):
         """
@@ -63,8 +65,8 @@ class GroupMembershipMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Membership, or None.
         """
-        self.get_destination_account()
-        self.get_destination_group()
+        if not (self.get_destination_account() and self.get_destination_group()):
+            return
 
         for membership in self.destination_account.group_memberships:
             if membership.account.href == self.destination_account.href and membership.group.href == self.destination_group.href:
