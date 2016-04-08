@@ -10,6 +10,8 @@ class TenantMigrator(BaseMigrator):
     """
     This class manages a migration from one Stormpath Tenant to another.
     """
+    SUPPORTED_DIRECTORY_TYPES = ['stormpath', 'google', 'facebook', 'linkedin', 'github']
+
     def migrate(self):
         """
         Migrates one Tenant to another =)  Won't stop until the migration is
@@ -19,6 +21,9 @@ class TenantMigrator(BaseMigrator):
         """
         for directory in self.src.directories:
             if directory.name == 'Stormpath Administrators':
+                continue
+
+            if directory.provider.provider_id not in self.SUPPORTED_DIRECTORY_TYPES:
                 continue
 
             migrator = DirectoryMigrator(destination_client=self.dst, source_directory=directory)
