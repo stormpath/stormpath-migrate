@@ -44,7 +44,13 @@ class AccountMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Account, or None.
         """
-        matches = self.destination_directory.accounts.search({'email': self.source_account.email})
+        try:
+            matches = self.destination_directory.accounts.search({'email': self.source_account.email})
+        except StormpathError, err:
+            print '[DESTINATION] | [ERROR]: Could not search for Account:', self.source_account.email, 'in Directory:', self.destination_directory.name
+            print err
+            return
+
         if len(matches):
             self.destination_account = matches[0]
 
