@@ -6,6 +6,7 @@ from uuid import uuid4
 from stormpath.error import Error as StormpathError
 
 from . import BaseMigrator
+from .. import logger
 from ..utils import sanitize
 
 
@@ -30,12 +31,16 @@ class AccountMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The CustomData object, or None.
         """
+        email = self.source_account.email
+        href = self.source_account.href
+
+        logger.debug('Fetching CustomData for source Account: {} ({})'.format(email, href))
+
         try:
             dict(self.source_account.custom_data)
             return self.source_account.custom_data
         except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not fetch CustomData for Account:', self.source_account.href
-            print err
+            logger.error('Could not fetch CustomData for source Account: {} ({}): {}'.format(email, href, err))
 
     def copy_account(self):
         """
