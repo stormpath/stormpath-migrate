@@ -48,17 +48,17 @@ class AccountMigrator(BaseMigrator):
         if len(matches):
             self.destination_account = matches[0]
 
-        try:
-            data = {
-                'username': self.source_account.username,
-                'given_name': self.source_account.given_name,
-                'middle_name': self.source_account.middle_name,
-                'surname': self.source_account.surname,
-                'email': self.source_account.email,
-                'password': self.source_password,
-                'status': self.source_account.status,
-            }
+        data = {
+            'username': self.source_account.username,
+            'given_name': self.source_account.given_name,
+            'middle_name': self.source_account.middle_name,
+            'surname': self.source_account.surname,
+            'email': self.source_account.email,
+            'password': self.source_password,
+            'status': self.source_account.status,
+        }
 
+        try:
             if dict(self.source_account.provider_data).get('provider_id') != 'stormpath' and not self.destination_account:
                 self.destination_account = self.destination_directory.accounts.create({
                     'provider_data': {
