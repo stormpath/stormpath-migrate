@@ -15,11 +15,14 @@ class DirectoryMigrator(BaseMigrator):
     """
     RESOURCE = 'directory'
     COLLECTION_RESOURCE = 'directories'
+    MIRROR_DIRECTORY_TYPES = ['ad', 'ldap']
+    SOCIAL_DIRECTORY_TYPES = ['google', 'facebook', 'linkedin', 'github', 'saml']
 
     def __init__(self, destination_client, source_directory):
         self.destination_client = destination_client
         self.source_directory = source_directory
         self.destination_directory = None
+        self.provider_id = dict(self.source_directory.provider).get('provider_id')
 
     def get_custom_data(self):
         """
@@ -68,27 +71,27 @@ class DirectoryMigrator(BaseMigrator):
                 'status': self.source_directory.status,
             }
 
-            if dict(self.source_directory.provider).get('provider_id') != 'stormpath':
+            if self.provider_id != 'stormpath':
                 data['provider'] = sanitize(self.source_directory.provider)
 
-                if self.destination_directory:
-                    print 'Updating provider data for Social Directory:', self.source_directory.name
-                    provider = self.destination_directory.provider
-                    for key, value in data['provider'].iteritems():
-                        setattr(provider, key, value)
-
-                    provider.save()
+            if self.provider_id in self.MIRROR_DIRECTORY_TYPES:
+                data['provider']['agent'] = sanitize(self.source_directory.provider.agent)
+                data['provider']['agent']['config'] = sanitize(self.source_directory.provider.agent.config)
+                data['provider']['agent']['config']['account_config'] = sanitize(self.source_directory.provider.agent.config.account_config)
+                data['provider']['agent']['config']['group_config'] = sanitize(self.source_directory.provider.agent.config.group_config)
 
             if self.destination_directory:
                 print 'Updating data for Directory:', self.source_directory.name
                 for key, value in data.iteritems():
-                    if key == 'provider':
-                        continue
-
                     setattr(self.destination_directory, key, value)
 
                 self.destination_directory.save()
             else:
+                # I'm manually setting the agent_user_dn_password field to a
+                # random string here, because our API won't export any
+                # credentials, so it's impossible for me to migrate this over.
+                data['provider']['agent']['config']['agent_user_dn_password'] = uuid4().hex
+
                 self.destination_directory = self.destination_client.directories.create(data)
 
             return self.destination_directory
@@ -153,7 +156,11 @@ class DirectoryMigrator(BaseMigrator):
         """
         copied_dir = self.copy_dir()
         self.copy_custom_data()
-        self.copy_strength()
+
+        # Mirror Directories don't support workflows at all, so this is moot.
+        # What I'm doing here is returning immediately to avoid issues.
+        if self.provider_id not in self.MIRROR_DIRECTORY_TYPES:
+            self.copy_strength()
 
         print 'Successfully copied Directory:', copied_dir.name
         return copied_dir
