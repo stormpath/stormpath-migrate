@@ -60,14 +60,14 @@ class DirectoryMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Directory, or None.
         """
-        matches = self.destination_client.directories.search({'name': self.source_directory.name})
+        matches = self.destination_client.directories.search({'name': self.source_directory.name.encode('utf-8')})
         if len(matches):
             self.destination_directory = matches[0]
 
         try:
             data = {
-                'description': self.source_directory.description,
-                'name': self.source_directory.name,
+                'description': self.source_directory.description.encode('utf-8'),
+                'name': self.source_directory.name.encode('utf-8'),
                 'status': self.source_directory.status,
             }
 
@@ -81,7 +81,7 @@ class DirectoryMigrator(BaseMigrator):
                 data['provider']['agent']['config']['group_config'] = sanitize(self.source_directory.provider.agent.config.group_config)
 
             if self.destination_directory:
-                print 'Updating data for Directory:', self.source_directory.name
+                print 'Updating data for Directory:', self.source_directory.name.encode('utf-8')
                 for key, value in data.iteritems():
                     setattr(self.destination_directory, key, value)
 
@@ -90,14 +90,15 @@ class DirectoryMigrator(BaseMigrator):
                 # I'm manually setting the agent_user_dn_password field to a
                 # random string here, because our API won't export any
                 # credentials, so it's impossible for me to migrate this over.
-                data['provider']['agent']['config']['agent_user_dn_password'] = uuid4().hex
+                if data.get('provider') and data.get('provider').get('agent'):
+                    data['provider']['agent']['config']['agent_user_dn_password'] = uuid4().hex
 
                 self.destination_directory = self.destination_client.directories.create(data)
 
             return self.destination_directory
         except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy Directory:', self.source_directory.name
-            print err
+            print '[SOURCE] | [ERROR]: Could not copy Directory:', self.source_directory.name.encode('utf-8')
+            print unicode(err).encode('utf-8')
 
     def copy_custom_data(self):
         """
@@ -162,5 +163,5 @@ class DirectoryMigrator(BaseMigrator):
         if self.provider_id not in self.MIRROR_DIRECTORY_TYPES:
             self.copy_strength()
 
-        print 'Successfully copied Directory:', copied_dir.name
+        print 'Successfully copied Directory:', copied_dir.name.encode('utf-8')
         return copied_dir
