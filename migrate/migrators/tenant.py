@@ -10,7 +10,7 @@ class TenantMigrator(BaseMigrator):
     """
     This class manages a migration from one Stormpath Tenant to another.
     """
-    SUPPORTED_DIRECTORY_TYPES = ['stormpath', 'google', 'facebook', 'linkedin', 'github']
+    SUPPORTED_DIRECTORY_TYPES = ['stormpath', 'google', 'facebook', 'linkedin', 'github', 'ad', 'ldap']
 
     def migrate(self):
         """
