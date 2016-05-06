@@ -1,6 +1,8 @@
 """Our Directory Migrator."""
 
 
+from uuid import uuid4
+
 from stormpath.error import Error as StormpathError
 
 from . import BaseMigrator
