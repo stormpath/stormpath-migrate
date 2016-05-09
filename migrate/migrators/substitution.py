@@ -73,7 +73,7 @@ class SubstitutionMigrator(BaseMigrator):
                     custom_data[self.hrefs[key]] = value
                     custom_data.save()
 
-                if value in self.hrefs:
+                if isinstance(value, str) and value in self.hrefs:
                     print 'Re-writing HREFs for Application:', app.name
                     custom_data[key] = self.hrefs[value]
                     custom_data.save()
@@ -88,7 +88,7 @@ class SubstitutionMigrator(BaseMigrator):
                     custom_data[self.hrefs[key]] = value
                     custom_data.save()
 
-                if value in self.hrefs:
+                if isinstance(value, str) and value in self.hrefs:
                     print 'Re-writing HREFs for Directory:', dir.name
                     custom_data[key] = self.hrefs[value]
                     custom_data.save()
@@ -104,7 +104,7 @@ class SubstitutionMigrator(BaseMigrator):
                     custom_data[self.hrefs[key]] = value
                     custom_data.save()
 
-                if value in self.hrefs:
+                if isinstance(value, str) and value in self.hrefs:
                     print 'Re-writing HREFs for Organization:', org.name
                     custom_data[key] = self.hrefs[value]
                     custom_data.save()
@@ -119,7 +119,7 @@ class SubstitutionMigrator(BaseMigrator):
                     custom_data[self.hrefs[key]] = value
                     custom_data.save()
 
-                if value in self.hrefs:
+                if isinstance(value, str) and value in self.hrefs:
                     print 'Re-writing HREFs for Group:', group.name
                     custom_data[key] = self.hrefs[value]
                     custom_data.save()
@@ -135,7 +135,7 @@ class SubstitutionMigrator(BaseMigrator):
                         custom_data[self.hrefs[key]] = value
                         custom_data.save()
 
-                    if value in self.hrefs:
+                    if isinstance(value, str) and value in self.hrefs:
                         print 'Re-writing HREFs for Account:', acc.email
                         custom_data[key] = self.hrefs[value]
                         custom_data.save()
