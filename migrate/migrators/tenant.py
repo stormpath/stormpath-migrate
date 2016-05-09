@@ -10,7 +10,7 @@ class TenantMigrator(BaseMigrator):
     """
     This class manages a migration from one Stormpath Tenant to another.
     """
-    SUPPORTED_DIRECTORY_TYPES = ['stormpath', 'google', 'facebook', 'linkedin', 'github', 'ad', 'ldap']
+    MIRROR_DIRECTORY_TYPES = ['ad', 'ldap']
 
     def migrate(self):
         """
@@ -23,44 +23,46 @@ class TenantMigrator(BaseMigrator):
             if directory.name == 'Stormpath Administrators':
                 continue
 
-            if directory.provider.provider_id not in self.SUPPORTED_DIRECTORY_TYPES:
-                continue
-
             migrator = DirectoryMigrator(destination_client=self.dst, source_directory=directory)
             destination_directory = migrator.migrate()
 
-            for group in directory.groups:
-                migrator = GroupMigrator(destination_directory=destination_directory, source_group=group)
-                migrator.migrate()
+            provider_id = dict(directory.provider).get('provider_id')
 
-            for account in directory.accounts:
-                hash = None
-                random_password = False
-
-                with open(self.passwords, 'rb') as f:
-                    for raw_data in f:
-                        data = loads(raw_data)
-
-                        if data.get('href') == account.href:
-                            hash = data.get('password')
-                            break
-
-                if not hash:
-                    random_password = True
-                    print '[SOURCE] | [ERROR]: No password hash found for Account:', account.email
-
-                migrator = AccountMigrator(destination_directory=destination_directory, source_account=account, source_password=hash, random_password=random_password)
-                migrated_account = migrator.migrate()
-
-                if not migrated_account:
-                    continue
-
-                for membership in account.group_memberships:
-                    migrator = GroupMembershipMigrator(destination_client=self.dst, source_group_membership=membership)
+            if provider_id not in self.MIRROR_DIRECTORY_TYPES or provider_id == 'saml':
+                for group in directory.groups:
+                    migrator = GroupMigrator(destination_directory=destination_directory, source_group=group)
                     migrator.migrate()
 
-            migrator = DirectoryWorkflowMigrator(destination_directory=destination_directory, source_directory=directory)
-            migrator.migrate()
+            if provider_id not in self.MIRROR_DIRECTORY_TYPES and provider_id != 'saml':
+                for account in directory.accounts:
+                    hash = None
+                    random_password = False
+
+                    with open(self.passwords, 'rb') as f:
+                        for raw_data in f:
+                            data = loads(raw_data)
+
+                            if data.get('href') == account.href:
+                                hash = data.get('password')
+                                break
+
+                    if not hash:
+                        random_password = True
+                        print '[SOURCE] | [WARNING]: No password hash found for Account:', account.email, 'Using random password.'
+
+                    migrator = AccountMigrator(destination_directory=destination_directory, source_account=account, source_password=hash, random_password=random_password)
+                    migrated_account = migrator.migrate()
+
+                    if not migrated_account:
+                        continue
+
+                    for membership in account.group_memberships:
+                        migrator = GroupMembershipMigrator(destination_client=self.dst, source_group_membership=membership)
+                        migrator.migrate()
+
+            if provider_id not in self.MIRROR_DIRECTORY_TYPES:
+                migrator = DirectoryWorkflowMigrator(destination_directory=destination_directory, source_directory=directory)
+                migrator.migrate()
 
         for organization in self.src.tenant.organizations:
             migrator = OrganizationMigrator(destination_client=self.dst, source_organization=organization)
