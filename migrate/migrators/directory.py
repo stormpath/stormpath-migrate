@@ -66,8 +66,8 @@ class DirectoryMigrator(BaseMigrator):
 
         try:
             data = {
-                'description': self.source_directory.description.encode('utf-8'),
-                'name': self.source_directory.name.encode('utf-8'),
+                'description': self.source_directory.description,
+                'name': self.source_directory.name,
                 'status': self.source_directory.status,
             }
 
@@ -79,6 +79,9 @@ class DirectoryMigrator(BaseMigrator):
                 data['provider']['agent']['config'] = sanitize(self.source_directory.provider.agent.config)
                 data['provider']['agent']['config']['account_config'] = sanitize(self.source_directory.provider.agent.config.account_config)
                 data['provider']['agent']['config']['group_config'] = sanitize(self.source_directory.provider.agent.config.group_config)
+            elif self.provider_id == 'saml':
+                #data['provider']['attribute_statement_mapping_rules'] = sanitize(self.source_directory.provider.attribute_statement_mapping_rules)
+                data['provider']['service_provider_metadata'] = sanitize(self.source_directory.provider.service_provider_metadata)
 
             if self.destination_directory:
                 print 'Updating data for Directory:', self.source_directory.name.encode('utf-8')
