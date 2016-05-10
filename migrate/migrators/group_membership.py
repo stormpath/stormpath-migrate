@@ -53,7 +53,7 @@ class GroupMembershipMigrator(BaseMigrator):
             destination_directory = self.destination_client.directories.search({'name': source_directory.name})[0]
             self.destination_group = destination_directory.groups.search({'name': source_group.name})[0]
         except (IndexError, StormpathError) as err:
-            print '[SOURCE] | [ERROR]: Could not fetch Group for Membership:', self.source_group_membership.href
+            print '[SOURCE] | [ERROR]: Could not fetch Group for Membership:', self.source_group_membership.href, 'with Account:', self.source_group_membership.account.href
             print err
 
         return self.destination_group
