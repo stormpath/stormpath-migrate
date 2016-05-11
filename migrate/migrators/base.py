@@ -1,11 +1,15 @@
 """Base Migrator class."""
 
 
+from .. import logger
+
+
 class BaseMigrator(object):
     """"
     This class provides a template for all other migrators.
     """
     def __init__(self, src, dst, passwords, from_date=None, verbose=False):
+        self.log = logger
         self.src = src
         self.dst = dst
         self.passwords = passwords
