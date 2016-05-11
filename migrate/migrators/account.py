@@ -52,8 +52,12 @@ class AccountMigrator(BaseMigrator):
         try:
             matches = self.destination_directory.accounts.search({'email': self.source_account.email})
         except StormpathError, err:
-            print '[DESTINATION] | [ERROR]: Could not search for Account:', self.source_account.email, 'in Directory:', self.destination_directory.name
-            print err
+            logger.error('Could not search for Account: {} in destination Directory: {} ({}): {}'.format(
+                self.source_account.email,
+                self.destination_directory.name,
+                self.destination_directory.href,
+                err
+            ))
             return
 
         if len(matches):
@@ -78,7 +82,10 @@ class AccountMigrator(BaseMigrator):
                     }
                 }, registration_workflow_enabled=False)
             elif self.destination_account:
-                print 'Updating data for Account:', self.source_account.email
+                logger.debug('Updating data for destination Account: {} ({})'.format(
+                    self.destination_account.email,
+                    self.destination_account.href
+                ))
 
                 # We don't support importing existing password hashes for
                 # ALREADY existing user accounts, so we'll just skip the
@@ -98,8 +105,13 @@ class AccountMigrator(BaseMigrator):
 
             return self.destination_account
         except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy Account:', self.source_account.email
-            print err
+            logger.error('Could not copy source Account: {} ({}) into destination Directory: {} ({}): {}'.format(
+                self.source_account.email,
+                self.source_account.href,
+                self.destination_directory.name,
+                self.destination_directory.href,
+                err
+            ))
 
     def copy_custom_data(self):
         """
@@ -124,8 +136,13 @@ class AccountMigrator(BaseMigrator):
             copied_custom_data.save()
             return copied_custom_data
         except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy CustomData for Account:', self.source_account.href
-            print err
+            logger.error('Could not copy CustomData for source Account: {} ({}) into destination Account: {} ({}): {}'.format(
+                self.source_account.email,
+                self.source_account.href,
+                self.destination_account.email,
+                self.destination_account.href,
+                err
+            ))
 
     def migrate(self):
         """
@@ -142,5 +159,10 @@ class AccountMigrator(BaseMigrator):
         if copied_account:
             self.copy_custom_data()
 
-            print 'Successfully copied Account:', copied_account.email
+            logger.info('Successfully copied source Account: {} ({}) into destination Directory: {} ({})'.format(
+                self.source_account.email,
+                self.source_account.href,
+                self.destination_directory.name,
+                self.destination_directory.href
+            ))
             return copied_account
