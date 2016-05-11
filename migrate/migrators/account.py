@@ -156,13 +156,17 @@ class AccountMigrator(BaseMigrator):
         :returns: The migrated Account, or None.
         """
         copied_account = self.copy_account()
+
         if copied_account:
             self.copy_custom_data()
 
-            logger.info('Successfully copied source Account: {} ({}) into destination Directory: {} ({})'.format(
+            logger.info('Successfully copied source Account: {} into destination Directory: {}'.format(
                 self.source_account.email,
-                self.source_account.href,
-                self.destination_directory.name,
-                self.destination_directory.href
+                self.destination_directory.name
             ))
             return copied_account
+        else:
+            logger.error('Failed to copy source Account: {} into destination Directory: {}'.format(
+                self.source_account.email,
+                self.destination_directory.name
+            ))
