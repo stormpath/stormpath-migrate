@@ -56,8 +56,8 @@ class TenantMigrator(BaseMigrator):
                     if not migrated_account:
                         continue
 
-                    for membership in account.group_memberships:
-                        migrator = GroupMembershipMigrator(destination_client=self.dst, source_group_membership=membership)
+                    for group in account.groups:
+                        migrator = GroupMembershipMigrator(destination_client=self.dst, destination_account=migrated_account, source_group=group)
                         migrator.migrate()
 
             if provider_id not in self.MIRROR_DIRECTORY_TYPES:
