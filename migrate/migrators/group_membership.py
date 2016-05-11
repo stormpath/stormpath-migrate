@@ -27,16 +27,32 @@ class GroupMembershipMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The Account, or None.
         """
+        source_account = self.source_group_membership.account
+        source_directory = source_account.directory
+
         try:
-            source_account = self.source_group_membership.account
-            source_directory = source_account.directory
+            matches = self.destination_client.directories.search({'name': source_directory.name})
+        except StormpathError as err:
+            self.log.error('Could not fetch destination Directory: {}: {}'.format(source_directory.name, err))
+            return
 
-            destination_directory = self.destination_client.directories.search({'name': source_directory.name})[0]
-            self.destination_account = destination_directory.accounts.search({'email': source_account.email})[0]
-        except (IndexError, StormpathError) as err:
-            print '[SOURCE] | [ERROR]: Could not fetch Account for Membership:', self.source_group_membership.href
-            print err
+        if len(matches) == 0:
+            self.log.error('[GROUP MEMBERSHIP]: Could not find destination Directory: {}'.format(source_directory.name))
+            return
 
+        destination_directory = matches[0]
+
+        try:
+            matches = destination_directory.accounts.search({'email': source_account.email})
+        except StormpathError as err:
+            self.log.error('[GROUP MEMBERSHIP]: Could not fetch destination Account: {}: {}'.format(source_account.email, err))
+            return
+
+        if len(matches) == 0:
+            self.log.error('[GROUP MEMBERSHIP]: Could not find destination Account: {}'.format(source_account.email))
+            return
+
+        self.destination_account = matches[0]
         return self.destination_account
 
     def get_destination_group(self):
@@ -46,16 +62,32 @@ class GroupMembershipMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The Group, or None.
         """
+        source_group = self.source_group_membership.group
+        source_directory = source_group.directory
+
         try:
-            source_group = self.source_group_membership.group
-            source_directory = source_group.directory
+            matches = self.destination_client.directories.search({'name': source_directory.name})
+        except StormpathError as err:
+            self.log.error('[GROUP MEMBERSHIP]: Could not fetch destination Directory: {}: {}'.format(source_directory.name, err))
+            return
 
-            destination_directory = self.destination_client.directories.search({'name': source_directory.name})[0]
-            self.destination_group = destination_directory.groups.search({'name': source_group.name})[0]
-        except (IndexError, StormpathError) as err:
-            print '[SOURCE] | [ERROR]: Could not fetch Group for Membership:', self.source_group_membership.href, 'with Account:', self.source_group_membership.account.href
-            print err
+        if len(matches) == 0:
+            self.log.error('[GROUP MEMBERSHIP]: Could not find destination Directory: {}'.format(source_directory.name))
+            return
 
+        destination_directory = matches[0]
+
+        try:
+            matches = destination_directory.groups.search({'name': source_group.name})
+        except StormpathError as err:
+            self.log.error('[GROUP MEMBERSHIP]: Could not fetch destination Group: {}: {}'.format(source_group.name, err))
+            return
+
+        if len(matches) == 0:
+            self.log.error('[GROUP MEMBERSHIP]: Could not find destination Group: {}'.format(source_group.name))
+            return
+
+        self.destination_group = matches[0]
         return self.destination_group
 
     def copy_membership(self):
@@ -80,8 +112,8 @@ class GroupMembershipMigrator(BaseMigrator):
 
             return self.destination_group_membership
         except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy Membership:', self.source_group_membership.href
-            print err
+            self.log.error('[GROUP MEMBERSHIP]: Could not create destination Membership: {}'.format(err))
+            return
 
     def migrate(self):
         """
@@ -96,5 +128,5 @@ class GroupMembershipMigrator(BaseMigrator):
         while not copied_membership:
             copied_membership = self.copy_membership()
 
-        print 'Successfully copied Membership:', copied_membership.href
+        self.log.info('[GROUP MEMBERSHIP]: Successfully copied GroupMembership for Account: {}'.format(self.source_group_membership.account.email))
         return copied_membership
