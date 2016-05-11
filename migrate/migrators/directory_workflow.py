@@ -187,10 +187,7 @@ class DirectoryWorkflowMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The migrated Directory, or None.
         """
-        copied_workflow = None
-
-        while not copied_workflow:
-            copied_workflow = self.copy_workflow()
+        copied_workflow = self.copy_workflow()
 
         print 'Successfully copied Workflow:', copied_workflow.href
         return copied_workflow

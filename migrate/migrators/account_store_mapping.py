@@ -183,10 +183,7 @@ class OrganizationAccountStoreMappingMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The migrated Mapping, or None.
         """
-        copied_mapping = None
-
-        while not copied_mapping:
-            copied_mapping = self.copy_mapping()
+        copied_mapping = self.copy_mapping()
 
         print 'Successfully copied Mapping:', copied_mapping.href
         return copied_mapping

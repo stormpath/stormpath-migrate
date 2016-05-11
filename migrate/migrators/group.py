@@ -93,13 +93,8 @@ class GroupMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The migrated Group, or None.
         """
-        copied_group = None
-        copied_custom_data = None
-
-        while not copied_group:
-            copied_group = self.copy_group()
-
-        while not copied_custom_data:
+        copied_group = self.copy_group()
+        if copied_group:
             copied_custom_data = self.copy_custom_data()
 
         print 'Successfully copied Group:', copied_group.name
