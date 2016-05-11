@@ -14,7 +14,7 @@ logger.setLevel(DEBUG)
 log_handler = StreamHandler()
 log_handler.setLevel(DEBUG)
 
-formatter = Formatter('%(asctime)s %(name)s[%(levelname)s]: %(message)s')
+formatter = Formatter('%(name)s[%(module)s][%(levelname)s]: %(message)s')
 log_handler.setFormatter(formatter)
 
 logger.addHandler(log_handler)
