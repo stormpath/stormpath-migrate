@@ -7,6 +7,7 @@ from stormpath.error import Error as StormpathError
 
 from . import BaseMigrator
 from .. import logger
+from ..constants import SOCIAL_PROVIDER_IDS
 from ..utils import sanitize
 
 
@@ -16,7 +17,6 @@ class AccountMigrator(BaseMigrator):
     """
     RESOURCE = 'account'
     COLLECTION_RESOURCE = 'accounts'
-    SOCIAL_PROVIDER_TYPES = ['facebook', 'google', 'linkedin', 'github']
 
     def __init__(self, destination_directory, source_account, source_password, random_password=False):
         self.destination_directory = destination_directory
@@ -55,7 +55,7 @@ class AccountMigrator(BaseMigrator):
                 matches = directory.accounts.search({'email': email})
                 return matches[0] if len(matches) > 0 else None
             except StormpathError as err:
-                logger.error('Failed to search for Account: {} in destination Directory: {}: {}'.format(email, directory.name, err))
+                logger.error('Failed to search for Account: {} in destination Directory: {} ({})'.format(email, directory.name, err))
 
     def copy_account(self):
         """
@@ -64,63 +64,78 @@ class AccountMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Account, or None.
         """
+        sa = self.source_account
+        da = self.destination_account
+        dd = self.destination_directory
+
         data = {
-            'username': self.source_account.username,
-            'given_name': self.source_account.given_name,
-            'middle_name': self.source_account.middle_name,
-            'surname': self.source_account.surname,
-            'email': self.source_account.email,
+            'username': sa.username,
+            'given_name': sa.given_name,
+            'middle_name': sa.middle_name,
+            'surname': sa.surname,
+            'email': sa.email,
             'password': self.source_password,
-            'status': self.source_account.status,
+            'status': sa.status,
         }
 
-        email = self.source_account.email
-        name = self.destination_directory.name
-        provider_data = dict(self.source_account.provider_data)
+        provider_data = dict(sa.provider_data)
         provider_id = provider_data.get('provider_id')
-        self.get_destination_account()
 
-        if self.destination_account:
+        # If the Account already exists in the destination Directory, then we
+        # simply need to update its data.
+        if da:
             # We don't support importing existing password hashes for
             # ALREADY existing user accounts, so we'll just skip the
             # password updating stuff here.
             del data['password']
 
-            for key, value in data.iteritems():
-                setattr(self.destination_account, key, value)
+            for key, value in data.items():
+                setattr(da, key, value)
 
-            try:
-                self.destination_account.save()
-            except StormpathError as err:
-                logger.error('Could not update Account: {} in destination Directory: {}: {}'.format(email, name, err))
-        else:
-            if provider_id in self.SOCIAL_PROVIDER_TYPES:
+            while True:
                 try:
-                    self.destination_account = self.destination_directory.accounts.create({
+                    da.save()
+                    return da
+                except StormpathError as err:
+                    logger.error('Could not update Account: {} in destination Directory: {} ({})'.format(da.email, dd.name, err))
+
+        # If we get here, it means the Account needs to be created in the
+        # destination Directory.
+        if provider_id in SOCIAL_PROVIDER_IDS:
+            while True:
+                try:
+                    da = dd.accounts.create({
                         'provider_data': {
                             'provider_id': provider_id,
                             'access_token': provider_data.access_token,
                         }
                     })
+                    return da
                 except StormpathError as err:
-                    logger.error('Could not create Account: {} in destination Directory: {}: {}'.format(email, name, err))
-            elif provider_id == 'stormpath':
-                if self.random_password:
-                    data['password'] = uuid4().hex + uuid4().hex.upper() + '!'
+                    logger.error('Could not create {} Account: {} in destination Directory: {} ({})'.format(provider_id.title(), da.email, dd.name, err))
 
-                    try:
-                        self.destination_account = self.destination_directory.accounts.create(data, registration_workflow_enabled=False)
-                    except StormpathError as err:
-                        logger.error('Could not create Account: {} in destination Directory: {}: {}'.format(email, name, err))
-                else:
-                    try:
-                        self.destination_account = self.destination_directory.accounts.create(data, password_format='mcf', registration_workflow_enabled=False)
-                    except StormpathError as err:
-                        logger.error('Could not create Account: {} in destination Directory: {}: {}'.format(email, name, err))
-            else:
-                logger.info('Skipping Account creation for Account: {} in destination Directory: {} because Account is not a Cloud or Social Account.'.format(email, name))
+        elif provider_id == 'stormpath':
+            if self.random_password:
+                data['password'] = uuid4().hex + uuid4().hex.upper() + '!'
 
-        return self.destination_account
+                while True:
+                    try:
+                        da = dd.accounts.create(data, registration_workflow_enabled=False)
+                        return da
+                    except StormpathError as err:
+                        logger.error('Could not create Account: {} in destination Directory: {} ({})'.format(da.email, dd.name, err))
+
+            # If we get here, if means we're going to use a pre-existing
+            # password hash to create this Account.
+            while True:
+                try:
+                    da = dd.accounts.create(data, password_format='mcf', registration_workflow_enabled=False)
+                    return da
+                except StormpathError as err:
+                    logger.error('Could not create Account: {} in destination Directory: {} ({})'.format(da.email, dd.name, err))
+
+        else:
+            logger.info('Skipping {} Account creation for Account: {} in destination Directory: {} because Account is not a Cloud or Social Account.'.format(provider_id.upper(), da.email, dd.name))
 
     def copy_custom_data(self):
         """
