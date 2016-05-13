@@ -4,6 +4,7 @@
 from stormpath.error import Error as StormpathError
 
 from . import BaseMigrator
+from .. import logger
 
 
 class ApplicationAccountStoreMappingMigrator(BaseMigrator):
@@ -16,7 +17,6 @@ class ApplicationAccountStoreMappingMigrator(BaseMigrator):
     def __init__(self, destination_application, source_account_store_mapping):
         self.destination_application = destination_application
         self.source_account_store_mapping = source_account_store_mapping
-        self.destination_account_store_mapping = None
 
     def get_source_account_store(self):
         """
@@ -26,12 +26,30 @@ class ApplicationAccountStoreMappingMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The AccountStore, or None.
         """
-        try:
-            self.source_account_store = self.source_account_store_mapping.account_store
-            return self.source_account_store
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not fetch AccountStore for Mapping:', self.source_account_store_mapping.href
-            print err
+        sasm = self.source_account_store_mapping
+
+        while True:
+            try:
+                sasm.account_store.refresh()
+                return sasm.account_store
+            except StormpathError as err:
+                logger.error('Failed to fetch source AccountStore for Mapping: {} ({})'.format(sasm.href, err))
+
+    def get_destination_tenant(self):
+        """
+        Retrieve the destination Tenant.
+
+        :rtype: object (or None)
+        :returns: The Tenant, or None.
+        """
+        da = self.destination_application
+
+        while True:
+            try:
+                da.tenant.refresh()
+                return da.tenant
+            except StormpathError as err:
+                logger.error('Failed to fetch destination Tenant ({})'.format(err))
 
     def get_destination_account_store(self):
         """
@@ -41,21 +59,18 @@ class ApplicationAccountStoreMappingMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The AccountStore, or None.
         """
-        try:
-            tenant = self.destination_application.tenant
-            klass = self.source_account_store.__class__.__name__
+        tenant = self.destination_tenant
+        sas = self.source_account_store
 
-            if klass == 'Directory':
-                self.destination_account_store = tenant.directories.search({'name': self.source_account_store.name})[0]
-            elif klass == 'Organization':
-                self.destination_account_store = tenant.organizations.search({'name': self.source_account_store.name})[0]
-            elif klass == 'Group':
-                self.destination_account_store = tenant.groups.search({'name': self.source_account_store.name})[0]
+        klass = sas.__class__.__name__
+        collection = 'directories' if klass == 'Directory' else klass.lower() + 's'
 
-            return self.destination_account_store
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not fetch AccountStore for Mapping:', self.source_account_store_mapping.href
-            print err
+        while True:
+            try:
+                matches = getattr(tenant, collection).search({'name': sas.name})
+                return matches[0] if len(matches) > 0 else None
+            except StormpathError as err:
+                logger.error('Failed to fetch destination {}: {} ({})'.format(klass, sas.name, err))
 
     def copy_mapping(self):
         """
@@ -64,25 +79,32 @@ class ApplicationAccountStoreMappingMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Mapping, or None.
         """
-        try:
-            self.get_source_account_store()
-            destination_account_store = self.get_destination_account_store()
+        da = self.destination_application
+        das = self.destination_account_store
+        sasm = self.source_account_store_mapping
 
-            for mapping in self.destination_application.account_store_mappings:
-                if mapping.account_store.href == destination_account_store.href and mapping.application.href == self.destination_application.href:
-                    return mapping
+        # First, we'll check to see if this mapping already exists.  If it does,
+        # we'll return immediately as there's nothing to do here.
+        for mapping in da.account_store_mappings:
+            if mapping.account_store.href == das.href and mapping.application.href == da.href:
+                return mapping
 
-            self.destination_account_store_mapping = self.destination_application.account_store_mappings.create({
-                'account_store': destination_account_store,
-                'application': self.destination_application,
-                'list_index': self.source_account_store_mapping.list_index,
-                'is_default_account_store': self.source_account_store_mapping.is_default_account_store,
-                'is_default_group_store': self.source_account_store_mapping.is_default_group_store,
-            })
-            return self.destination_account_store_mapping
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy Mapping:', self.source_account_store_mapping.href
-            print err
+        while True:
+            try:
+                return da.account_store_mappings.create({
+                    'account_store': das,
+                    'application': da,
+                    'list_index': sasm.list_index,
+                    'is_default_account_store': sasm.is_default_account_store,
+                    'is_default_group_store': sasm.is_default_group_store,
+                })
+            except StormpathError as err:
+                logger.error('Failed to copy AccountStoreMapping from Application: {} to {} {} ({})'.format(
+                    da.name,
+                    das.__class__.__name__,
+                    das.name,
+                    err
+                ))
 
     def migrate(self):
         """
@@ -92,13 +114,26 @@ class ApplicationAccountStoreMappingMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The migrated Mapping, or None.
         """
-        copied_mapping = None
+        self.destination_tenant = self.get_destination_tenant()
+        self.source_account_store = self.get_source_account_store()
+        self.destination_account_store = self.get_destination_account_store()
 
-        while not copied_mapping:
-            copied_mapping = self.copy_mapping()
+        if not self.destination_account_store:
+            logger.warning('Skipping creation of AccountStoreMapping from Application: {} to {} {} (The destination AccountStore does not exist)'.format(
+                self.destination_application.name,
+                self.source_account_store.__class__.__name__,
+                self.source_account_store.name
+            ))
+            return
 
-        print 'Successfully copied Mapping:', copied_mapping.href
-        return copied_mapping
+        mapping = self.copy_mapping()
+        logger.info('Successfully copied source AccountStoreMapping from Application: {} to {} {}.'.format(
+            self.destination_application.name,
+            self.destination_account_store.__class__.__name__,
+            self.destination_account_store.name
+        ))
+
+        return mapping
 
 
 class OrganizationAccountStoreMappingMigrator(BaseMigrator):
@@ -111,7 +146,6 @@ class OrganizationAccountStoreMappingMigrator(BaseMigrator):
     def __init__(self, destination_organization, source_account_store_mapping):
         self.destination_organization = destination_organization
         self.source_account_store_mapping = source_account_store_mapping
-        self.destination_account_store_mapping = None
 
     def get_source_account_store(self):
         """
@@ -120,12 +154,30 @@ class OrganizationAccountStoreMappingMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The AccountStore, or None.
         """
-        try:
-            self.source_account_store = self.source_account_store_mapping.account_store
-            return self.source_account_store
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not fetch AccountStore for Mapping:', self.source_account_store_mapping.href
-            print err
+        sasm = self.source_account_store_mapping
+
+        while True:
+            try:
+                sasm.account_store.refresh()
+                return sasm.account_store
+            except StormpathError as err:
+                logger.error('Failed to fetch source AccountStore for Mapping: {} ({})'.format(sasm.href, err))
+
+    def get_destination_tenant(self):
+        """
+        Retrieve the destination Tenant.
+
+        :rtype: object (or None)
+        :returns: The Tenant, or None.
+        """
+        do = self.destination_organization
+
+        while True:
+            try:
+                do.tenant.refresh()
+                return do.tenant
+            except StormpathError as err:
+                logger.error('Failed to fetch destination Tenant ({})'.format(err))
 
     def get_destination_account_store(self):
         """
@@ -134,19 +186,18 @@ class OrganizationAccountStoreMappingMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The AccountStore, or None.
         """
-        try:
-            tenant = self.destination_organization.tenant
-            klass = self.source_account_store.__class__.__name__
+        tenant = self.destination_tenant
+        sas = self.source_account_store
 
-            if klass == 'Directory':
-                self.destination_account_store = tenant.directories.search({'name': self.source_account_store.name})[0]
-            elif klass == 'Group':
-                self.destination_account_store = tenant.groups.search({'name': self.source_account_store.name})[0]
+        klass = sas.__class__.__name__
+        collection = 'directories' if klass == 'Directory' else klass.lower() + 's'
 
-            return self.destination_account_store
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not fetch AccountStore for Mapping:', self.source_account_store_mapping.href
-            print err
+        while True:
+            try:
+                matches = getattr(tenant, collection).search({'name': sas.name})
+                return matches[0] if len(matches) > 0 else None
+            except StormpathError as err:
+                logger.error('Failed to fetch destination {}: {} ({})'.format(klass, sas.name, err))
 
     def copy_mapping(self):
         """
@@ -155,25 +206,32 @@ class OrganizationAccountStoreMappingMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Mapping, or None.
         """
-        try:
-            self.get_source_account_store()
-            destination_account_store = self.get_destination_account_store()
+        do = self.destination_organization
+        das = self.destination_account_store
+        sasm = self.source_account_store_mapping
 
-            for mapping in self.destination_organization.account_store_mappings:
-                if mapping.account_store.href == destination_account_store.href and mapping.organization.href == self.destination_organization.href:
-                    return mapping
+        # First, we'll check to see if this mapping already exists.  If it does,
+        # we'll return immediately as there's nothing to do here.
+        for mapping in do.account_store_mappings:
+            if mapping.account_store.href == das.href and mapping.organization.href == do.href:
+                return mapping
 
-            self.destination_account_store_mapping = self.destination_organization._client.organization_account_store_mappings.create({
-                'account_store': destination_account_store,
-                'organization': self.destination_organization,
-                'list_index': self.source_account_store_mapping.list_index,
-                'is_default_account_store': self.source_account_store_mapping.is_default_account_store,
-                'is_default_group_store': self.source_account_store_mapping.is_default_group_store,
-            })
-            return self.destination_account_store_mapping
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy Mapping:', self.source_account_store_mapping.href
-            print err
+        while True:
+            try:
+                return do.account_store_mappings._client.organization_account_store_mappings.create({
+                    'account_store': das,
+                    'organization': do,
+                    'list_index': sasm.list_index,
+                    'is_default_account_store': sasm.is_default_account_store,
+                    'is_default_group_store': sasm.is_default_group_store,
+                })
+            except StormpathError as err:
+                logger.error('Failed to copy AccountStoreMapping from Organization: {} to {} {} ({})'.format(
+                    do.name,
+                    das.__class__.__name__,
+                    das.name,
+                    err
+                ))
 
     def migrate(self):
         """
@@ -183,7 +241,23 @@ class OrganizationAccountStoreMappingMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The migrated Mapping, or None.
         """
-        copied_mapping = self.copy_mapping()
+        self.destination_tenant = self.get_destination_tenant()
+        self.source_account_store = self.get_source_account_store()
+        self.destination_account_store = self.get_destination_account_store()
 
-        print 'Successfully copied Mapping:', copied_mapping.href
-        return copied_mapping
+        if not self.destination_account_store:
+            logger.warning('Skipping creation of AccountStoreMapping from Organization: {} to {} {} (The destination AccountStore does not exist)'.format(
+                self.destination_organization.name,
+                self.source_account_store.__class__.__name__,
+                self.source_account_store.name
+            ))
+            return
+
+        mapping = self.copy_mapping()
+        logger.info('Successfully copied source AccountStoreMapping from Organization: {} to {} {}.'.format(
+            self.destination_organization.name,
+            self.destination_account_store.__class__.__name__,
+            self.destination_account_store.name
+        ))
+
+        return mapping
