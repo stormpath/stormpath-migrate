@@ -22,7 +22,6 @@ class AccountMigrator(BaseMigrator):
         self.destination_directory = destination_directory
         self.source_account = source_account
         self.source_password = source_password
-        self.destination_account = None
         self.random_password = random_password
 
     def get_custom_data(self):
@@ -48,17 +47,15 @@ class AccountMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The Account object, or None.
         """
-        try:
-            matches = self.destination_directory.accounts.search({'email': self.source_account.email})
-        except StormpathError as err:
-            logger.error('Could not search for Account: {} in destination Directory: {}: {}'.format(
-                self.source_account.email,
-                self.destination_directory.name,
-                err
-            ))
+        directory = self.destination_directory
+        email = self.source_account.email
 
-        self.destination_account = matches[0] if len(matches) > 0 else None
-        return self.destination_account
+        try:
+            matches = directory.accounts.search({'email': email})
+        except StormpathError as err:
+            logger.error('Failed to search for Account: {} in destination Directory: {}: {}'.format(email, directory.name, err))
+
+        return matches[0] if len(matches) > 0 else None
 
     def copy_account(self):
         """
@@ -165,6 +162,7 @@ class AccountMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The migrated Account, or None.
         """
+        self.destination_account = self.get_destination_account()
         copied_account = self.copy_account()
 
         if copied_account:
