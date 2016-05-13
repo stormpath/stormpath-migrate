@@ -135,7 +135,7 @@ class AccountMigrator(BaseMigrator):
                     logger.error('Failed to create Account: {} in destination Directory: {} ({})'.format(sa.email, dd.name, err))
 
         else:
-            logger.info('Skipping {} Account creation for Account: {} in destination Directory: {} because Account is not a Cloud or Social Account.'.format(provider_id.upper(), da.email, dd.name))
+            logger.warning('Skipping {} Account creation for Account: {} in destination Directory: {} because Account is not a Cloud or Social Account.'.format(provider_id.upper(), da.email, dd.name))
 
     def copy_custom_data(self):
         """
