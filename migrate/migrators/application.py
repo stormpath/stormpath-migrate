@@ -4,6 +4,7 @@
 from stormpath.error import Error as StormpathError
 
 from . import BaseMigrator
+from .. import logger
 from ..utils import sanitize
 
 
@@ -17,36 +18,22 @@ class ApplicationMigrator(BaseMigrator):
     def __init__(self, destination_client, source_application):
         self.destination_client = destination_client
         self.source_application = source_application
-        self.destination_application = None
 
-    def get_custom_data(self):
+    def get_destination_app(self):
         """
-        Retrieve the CustomData.
-
-        :rtype: object (or None)
-        :returns: The CustomData object, or None.
-        """
-        try:
-            dict(self.source_application.custom_data)
-            return self.source_application.custom_data
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not fetch CustomData for Application:', self.source_application.href
-            print err
-
-    def get_oauth_policy(self):
-        """
-        Retrieve the OAuthPolicy.
+        Retrieve the destination Application.
 
         :rtype: object (or None)
-        :returns: The OAuthPolicy, or None.
+        :returns: The Application object, or None.
         """
-        try:
-            oauth_policy = self.source_application.oauth_policy
-            dict(oauth_policy)
-            return oauth_policy
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not fetch OAuthPolicy for Application:', self.source_application.href
-            print err
+        sa = self.source_application
+
+        while True:
+            try:
+                matches = self.destination_client.applications.search({'name': sa.name})
+                return matches[0] if len(matches) > 0 else None
+            except StormpathError as err:
+                logger.error('Failed to search for Application: {} ({})'.format(sa.name, err))
 
     def copy_app(self):
         """
@@ -55,30 +42,34 @@ class ApplicationMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Application, or None.
         """
-        matches = self.destination_client.applications.search({'name': self.source_application.name})
-        if len(matches):
-            self.destination_application = matches[0]
+        sa = self.source_application
+        da = self.destination_application
 
-        try:
-            data = {
-                'description': self.source_application.description,
-                'name': self.source_application.name,
-                'status': self.source_application.status,
-            }
+        data = {
+            'description': sa.description,
+            'name': sa.name,
+            'status': sa.status,
+        }
 
-            if self.destination_application:
-                print 'Updating data for Application:', self.source_application.name
-                for key, value in data.iteritems():
-                    setattr(self.destination_application, key, value)
+        # If the Application already exists, we'll just update it.
+        if da:
+            for key, value in data.items():
+                setattr(da, key, value)
 
-                self.destination_application.save()
-            else:
-                self.destination_application = self.destination_client.applications.create(data)
+            while True:
+                try:
+                    da.save()
+                    return da
+                except StormpathError as err:
+                    logger.error('Failed to copy Application: {} ({})'.format(sa.name, err))
 
-            return self.destination_application
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy Application:', self.source_application.name
-            print err
+        # If we get here, it means we need to create the Application from
+        # scratch.
+        while True:
+            try:
+                return self.destination_client.applications.create(data)
+            except StormpathError as err:
+                logger.error('Failed to copy Application: {} ({})'.format(sa.name, err))
 
     def copy_custom_data(self):
         """
@@ -87,18 +78,18 @@ class ApplicationMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied CustomData, or None.
         """
-        try:
-            source_custom_data = self.source_application.custom_data
-            copied_custom_data = self.destination_application.custom_data
+        sa = self.source_application
+        da = self.destination_application
 
-            for key, value in sanitize(source_custom_data).iteritems():
-                copied_custom_data[key] = value
+        for key, value in sanitize(sa.custom_data).items():
+            da.custom_data[key] = value
 
-            copied_custom_data.save()
-            return copied_custom_data
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy CustomData for Application:', self.source_application.href
-            print err
+        while True:
+            try:
+                da.custom_data.save()
+                return da.custom_data
+            except StormpathError as err:
+                logger.error('Failed to copy CustomData for source Application: {} into destination Account: {} ({})'.format(sa.name, da.name, err))
 
     def copy_oauth_policy(self):
         """
@@ -107,18 +98,21 @@ class ApplicationMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied OAuthPolicy, or None.
         """
-        try:
-            source_oauth_policy = self.get_oauth_policy()
-            destination_oauth_policy = self.destination_application.oauth_policy
+        sa = self.source_application
+        da = self.destination_application
 
-            destination_oauth_policy.access_token_ttl = source_oauth_policy.access_token_ttl
-            destination_oauth_policy.refresh_token_ttl = source_oauth_policy.refresh_token_ttl
+        sop = sa.oauth_policy
+        dop = da.oauth_policy
 
-            destination_oauth_policy.save()
-            return destination_oauth_policy
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy OAuthPolicy for Application:', self.source_application.href
-            print err
+        dop.access_token_ttl = sop.access_token_ttl
+        dop.refresh_token_ttl = sop.refresh_token_ttl
+
+        while True:
+            try:
+                dop.save()
+                return dop
+            except StormpathError as err:
+                logger.error('Failed to copy OAuthPolicy for Application: {} ({})'.format(sa.name, err))
 
     def migrate(self):
         """
@@ -132,9 +126,10 @@ class ApplicationMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The migrated Application, or None.
         """
-        copied_app = self.copy_app()
+        self.destination_application = self.get_destination_app()
+        self.destination_application = self.copy_app()
         self.copy_custom_data()
         self.copy_oauth_policy()
 
-        print 'Successfully copied Application:', copied_app.name
-        return copied_app
+        logger.info('Successfully copied Application: {}'.format(self.destination_application.name))
+        return self.destination_application
