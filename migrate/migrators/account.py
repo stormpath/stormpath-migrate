@@ -50,12 +50,12 @@ class AccountMigrator(BaseMigrator):
         directory = self.destination_directory
         email = self.source_account.email
 
-        try:
-            matches = directory.accounts.search({'email': email})
-        except StormpathError as err:
-            logger.error('Failed to search for Account: {} in destination Directory: {}: {}'.format(email, directory.name, err))
-
-        return matches[0] if len(matches) > 0 else None
+        while True:
+            try:
+                matches = directory.accounts.search({'email': email})
+                return matches[0] if len(matches) > 0 else None
+            except StormpathError as err:
+                logger.error('Failed to search for Account: {} in destination Directory: {}: {}'.format(email, directory.name, err))
 
     def copy_account(self):
         """
