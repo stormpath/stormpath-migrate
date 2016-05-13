@@ -37,7 +37,7 @@ class AccountMigrator(BaseMigrator):
             try:
                 sa.custom_data.refresh()
                 return sa.custom_data
-            except StormpathError, err:
+            except StormpathError as err:
                 logger.error('Failed to fetch CustomData for source Account: {} ({})'.format(sa.email, err))
 
     def get_destination_account(self):
@@ -147,7 +147,7 @@ class AccountMigrator(BaseMigrator):
         sa = self.source_account
         da = self.destination_account
 
-        for key, value in sanitize(sa.custom_data).items():
+        for key, value in sanitize(self.get_custom_data()).items():
             da.custom_data[key] = value
 
         while True:
