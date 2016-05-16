@@ -6,6 +6,7 @@ from uuid import uuid4
 from stormpath.error import Error as StormpathError
 
 from . import BaseMigrator
+from .. import logger
 from ..utils import sanitize
 
 
@@ -21,37 +22,7 @@ class DirectoryMigrator(BaseMigrator):
     def __init__(self, destination_client, source_directory):
         self.destination_client = destination_client
         self.source_directory = source_directory
-        self.destination_directory = None
         self.provider_id = dict(self.source_directory.provider).get('provider_id')
-
-    def get_custom_data(self):
-        """
-        Retrieve the CustomData.
-
-        :rtype: object (or None)
-        :returns: The CustomData object, or None.
-        """
-        try:
-            dict(self.source_directory.custom_data)
-            return self.source_directory.custom_data
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not fetch CustomData for Directory:', self.source_directory.href
-            print err
-
-    def get_strength(self):
-        """
-        Retrieve the Strength.
-
-        :rtype: object (or None)
-        :returns: The Strength, or None.
-        """
-        try:
-            strength = self.source_directory.password_policy.strength
-            dict(strength)
-            return strength
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not fetch Strength for Directory:', self.source_directory.href
-            print err
 
     def copy_dir(self):
         """
@@ -60,7 +31,14 @@ class DirectoryMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Directory, or None.
         """
-        matches = self.destination_client.directories.search({'name': self.source_directory.name.encode('utf-8')})
+        sd = self.source_directory
+
+        while True:
+            try:
+                matches = self.destination_client.directories.search({'name': sd.name.encode('utf-8')})
+            except StormpathError as err:
+                logger.error('Failed to search for destination Directory: {} ({})'.format(sd.name, err))
+
         if len(matches):
             self.destination_directory = matches[0]
 
