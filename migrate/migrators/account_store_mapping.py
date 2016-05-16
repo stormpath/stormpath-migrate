@@ -18,23 +18,6 @@ class ApplicationAccountStoreMappingMigrator(BaseMigrator):
         self.destination_application = destination_application
         self.source_account_store_mapping = source_account_store_mapping
 
-    def get_source_account_store(self):
-        """
-        Retrieve the source AccountStore (either Directory, Organization,
-        or Group).
-
-        :rtype: object (or None)
-        :returns: The AccountStore, or None.
-        """
-        sasm = self.source_account_store_mapping
-
-        while True:
-            try:
-                sasm.account_store.refresh()
-                return sasm.account_store
-            except StormpathError as err:
-                logger.error('Failed to fetch source AccountStore for Mapping: {} ({})'.format(sasm.href, err))
-
     def get_destination_tenant(self):
         """
         Retrieve the destination Tenant.
@@ -115,7 +98,7 @@ class ApplicationAccountStoreMappingMigrator(BaseMigrator):
         :returns: The migrated Mapping, or None.
         """
         self.destination_tenant = self.get_destination_tenant()
-        self.source_account_store = self.get_source_account_store()
+        self.source_account_store = self.source_account_store_mapping.account_store
         self.destination_account_store = self.get_destination_account_store()
 
         if not self.destination_account_store:
@@ -146,22 +129,6 @@ class OrganizationAccountStoreMappingMigrator(BaseMigrator):
     def __init__(self, destination_organization, source_account_store_mapping):
         self.destination_organization = destination_organization
         self.source_account_store_mapping = source_account_store_mapping
-
-    def get_source_account_store(self):
-        """
-        Retrieve the source AccountStore (either Directory or Group).
-
-        :rtype: object (or None)
-        :returns: The AccountStore, or None.
-        """
-        sasm = self.source_account_store_mapping
-
-        while True:
-            try:
-                sasm.account_store.refresh()
-                return sasm.account_store
-            except StormpathError as err:
-                logger.error('Failed to fetch source AccountStore for Mapping: {} ({})'.format(sasm.href, err))
 
     def get_destination_tenant(self):
         """
@@ -242,7 +209,7 @@ class OrganizationAccountStoreMappingMigrator(BaseMigrator):
         :returns: The migrated Mapping, or None.
         """
         self.destination_tenant = self.get_destination_tenant()
-        self.source_account_store = self.get_source_account_store()
+        self.source_account_store = self.source_account_store_mapping.account_store
         self.destination_account_store = self.get_destination_account_store()
 
         if not self.destination_account_store:
