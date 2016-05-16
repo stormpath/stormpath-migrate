@@ -2,6 +2,7 @@
 
 
 from . import BaseMigrator
+from .. import logger
 
 
 class SubstitutionMigrator(BaseMigrator):
@@ -18,44 +19,47 @@ class SubstitutionMigrator(BaseMigrator):
         """
         Build an index of HREFs that we can use for substitutions later on.
         """
-        print 'Building index of Application HREFs.'
-        for source_application in self.source_client.applications:
-            self.hrefs[source_application.href] = None
+        sc = self.source_client
+        dc = self.destination_client
 
-            for app in self.destination_client.applications.search({'name': source_application.name}):
-                self.hrefs[source_application.href] = app.href
+        logger.info('Building index of Application HREFs... This may take a while.')
+        for sa in sc.applications:
+            self.hrefs[sa.href] = None
 
-        print 'Building index of Directory HREFs.'
-        for source_directory in self.source_client.directories:
-            self.hrefs[source_directory.href] = None
+            for app in dc.applications.search({'name': sa.name}):
+                self.hrefs[sa.href] = app.href
 
-            for dir in self.destination_client.directories.search({'name': source_directory.name}):
-                self.hrefs[source_directory.href] = dir.href
+        logger.info('Building index of Directory HREFs... This may take a while.')
+        for sd in sc.directories:
+            self.hrefs[sd.href] = None
 
-        print 'Building index of Organization HREFs.'
-        for source_organization in self.source_client.tenant.organizations:
-            self.hrefs[source_organization.href] = None
+            for dir in dc.directories.search({'name': sd.name}):
+                self.hrefs[sd.href] = dir.href
 
-            for org in self.destination_client.tenant.organizations.search({'name': source_organization.name}):
-                self.hrefs[source_organization.href] = org.href
+        logger.info('Building index of Organization HREFs... This may take a while.')
+        for so in sc.tenant.organizations:
+            self.hrefs[so.href] = None
 
-        print 'Building index of Group HREFs.'
-        for source_group in self.source_client.groups:
-            self.hrefs[source_group.href] = None
+            for org in dc.tenant.organizations.search({'name': so.name}):
+                self.hrefs[so.href] = org.href
 
-            source_directory = source_group.directory
-            for dir in self.destination_client.directories.search({'name': source_directory.name}):
-                for group in dir.groups.search({'name': source_group.name}):
-                    self.hrefs[source_group.href] = group.href
+        logger.info('Building index of Group HREFs... This may take a while.')
+        for sg in sc.groups:
+            self.hrefs[sg.href] = None
 
-        print 'Building index of Account HREFs.'
-        for source_directory in self.source_client.directories:
-            for source_account in source_directory.accounts:
-                self.hrefs[source_account.href] = None
+            sd = sg.directory
+            for dir in dc.directories.search({'name': sd.name}):
+                for group in dir.groups.search({'name': sg.name}):
+                    self.hrefs[sg.href] = group.href
 
-                for dir in self.destination_client.directories.search({'name': source_directory.name}):
-                    for account in dir.accounts.search({'email': source_account.email}):
-                        self.hrefs[source_account.href] = account.href
+        logger.info('Building index of Account HREFs... This may take a while.')
+        for sd in sc.directories:
+            for sa in sd.accounts:
+                self.hrefs[sa.href] = None
+
+                for dir in dc.directories.search({'name': sd.name}):
+                    for account in dir.accounts.search({'email': sa.email}):
+                        self.hrefs[sa.href] = account.href
 
     def migrate(self):
         """
