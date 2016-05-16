@@ -36,7 +36,7 @@ class OrganizationMigrator(BaseMigrator):
             except StormpathError as err:
                 logger.error('Failed to search for Organization: {} ({})'.format(so.name, err))
 
-    def copy_organization(self):
+    def copy_org(self):
         """
         Copy the source Organization over into the destination Tenant.
 
@@ -103,7 +103,7 @@ class OrganizationMigrator(BaseMigrator):
         :returns: The migrated Organization, or None.
         """
         self.destination_organization = self.get_destination_org()
-        self.destination_organization = self.copy_organization()
+        self.destination_organization = self.copy_org()
         self.copy_custom_data()
 
         logger.info('Successfully copied Organization: {}'.format(self.destination_organization.name))
