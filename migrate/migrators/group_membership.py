@@ -14,12 +14,9 @@ class GroupMembershipMigrator(BaseMigrator):
     RESOURCE = 'group_membership'
     COLLECTION_RESOURCE = 'group_memberships'
 
-    def __init__(self, destination_client, destination_account, source_group):
+    def __init__(self, destination_client, source_group_membership):
         self.destination_client = destination_client
-        self.destination_account = destination_account
-        self.source_group = source_group
-        self.destination_directory = None
-        self.destination_group = None
+        self.source_group_membership = source_group_membership
 
     def get_destination_directory(self):
         """
@@ -28,19 +25,16 @@ class GroupMembershipMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The Directory, or None.
         """
-        source_directory = self.source_group.directory
+        dc = self.destination_client
+        sgm = self.source_group_membership
+        sd = sgm.group.directory
 
-        try:
-            matches = self.destination_client.directories.search({'name': source_directory.name})
-        except StormpathError as err:
-            logger.error('Could not fetch destination Directory: {}: {}'.format(source_directory.name, err))
-            return
-
-        if len(matches):
-            self.destination_directory = matches[0]
-            return self.destination_directory
-
-        logger.error('Could not find destination Directory: {}'.format(source_directory.name))
+        while True:
+            try:
+                matches = dc.directories.search({'name': sd.name})
+                return matches[0] if len(matches) > 0 else None
+            except StormpathError as err:
+                logger.error('Failed to search for Directory: {} ({})'.format(sd.name, err))
 
     def get_destination_group(self):
         """
@@ -49,17 +43,32 @@ class GroupMembershipMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The Group, or None.
         """
-        try:
-            matches = self.destination_directory.groups.search({'name': self.source_group.name})
-        except StormpathError as err:
-            logger.error('Could not fetch destination Group: {}: {}'.format(self.source_group.name, err))
-            return
+        dd = self.destination_directory
+        sg = self.source_group_membership.group
 
-        if len(matches):
-            self.destination_group = matches[0]
-            return self.destination_group
+        while True:
+            try:
+                matches = dd.groups.search({'name': sg.name})
+                return matches[0] if len(matches) > 0 else None
+            except StormpathError as err:
+                logger.error('Failed to search for Group: {} in Directory: {} ({})'.format(sg.name, dd.name, err))
 
-        logger.error('Could not find destination Group: {}'.format(self.source_group.name))
+    def get_destination_account(self):
+        """
+        Retrieve the destination Account.
+
+        :rtype: object (or None)
+        :returns: The Account, or None.
+        """
+        dd = self.destination_directory
+        sa = self.source_group_membership.account
+
+        while True:
+            try:
+                matches = dd.accounts.search({'username': sa.name})
+                return matches[0] if len(matches) > 0 else None
+            except StormpathError as err:
+                logger.error('Failed to search for Account: {} in Directory: {} ({})'.format(sa.username, dd.name, err))
 
     def copy_membership(self):
         """
@@ -68,22 +77,20 @@ class GroupMembershipMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Group, or None.
         """
-        if not (self.get_destination_directory() and self.get_destination_group()):
-            return
+        da = self.destination_account
+        dc = self.destination_client
+        dg = self.destination_group
+        dd = self.destination_directory
 
-        for group in self.destination_account.groups:
-            if group.href == self.destination_group.href:
-                return self.destination_group
+        for membership in da.group_memberships:
+            if membership.group.href == dg.href:
+                return membership
 
-        try:
-            self.destination_group_membership = self.destination_client.group_memberships.create({
-                'account': self.destination_account,
-                'group': self.destination_group,
-            })
-
-            return self.destination_group_membership
-        except StormpathError, err:
-            logger.error('Could not create destination Membership: {}'.format(err))
+        while True:
+            try:
+                return dc.group_memberships.create({'account': da, 'group': dg})
+            except StormpathError as err:
+                logger.error('Failed to copy GroupMembership for Account: {} and Group: {} in Directory: {} ({})'.format(da.username, dg.name, dd.name, err))
 
     def migrate(self):
         """
@@ -93,16 +100,27 @@ class GroupMembershipMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The migrated Membership, or None.
         """
-        copied_membership = self.copy_membership()
+        sa = self.source_group_membership.account
+        sd = self.source_group_membership.directory
+        sg = self.source_group_membership.group
 
-        if copied_membership:
-            logger.info('Successfully copied GroupMembership for Account: {} and Group: {}'.format(
-                self.destination_account.email,
-                self.source_group.name
-            ))
-            return copied_membership
-        else:
-            logger.error('Failed to copy GroupMembership for Account: {} and Group: {}'.format(
-                self.destination_account.email,
-                self.source_group.name
-            ))
+        self.destination_directory = self.get_destination_directory()
+        self.destination_group = self.get_destination_group()
+        self.destination_account = self.get_destination_account()
+
+        # If the destination resources can't be found, we need to exit the
+        # process ASAP.  This means something horrible is happening -- maybe a
+        # client is concurrently deleting resources on the SOURCE or DESTINATION
+        # and messing things up.
+        if not self.destination_directory:
+            logger.critical('The Directory: {} does not exist in the destination. This is a fatal error.'.format(sg.directory.name))
+            raise RuntimeError('Read the log.')
+        elif not self.destination_group:
+            logger.critical('The Group: {} does not exist in the destination Directory: {}.  This is a fatal error.'.format(sg.name, sd.name))
+            raise RuntimeError('Read the log.')
+        elif not self.destination_account:
+            logger.critical('The Account: {} does not exist in the destination Directory: {}.  This is a fatal error.'.format(sa.username, sd.name))
+            raise RuntimeError('Read the log.')
+
+        logger.info('Successfully copied GroupMembership for Account: {} and Group: {} in Directory: {}'.format(sa.username, sg.name, sd.name))
+        return self.copy_membership()
