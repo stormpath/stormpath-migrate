@@ -4,6 +4,7 @@
 from stormpath.error import Error as StormpathError
 
 from . import BaseMigrator
+from .. import logger
 from ..utils import sanitize
 
 
@@ -17,21 +18,23 @@ class GroupMigrator(BaseMigrator):
     def __init__(self, destination_directory, source_group):
         self.destination_directory = destination_directory
         self.source_group = source_group
-        self.destination_group = None
 
-    def get_custom_data(self):
+    def get_destination_group(self):
         """
-        Retrieve the CustomData.
+        Retrieve the destination Group.
 
         :rtype: object (or None)
-        :returns: The CustomData object, or None.
+        :returns: The Group object, or None.
         """
-        try:
-            dict(self.source_group.custom_data)
-            return self.source_group.custom_data
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not fetch CustomData for Group:', self.source_group.href
-            print err
+        sg = self.source_group
+        dd = self.destination_directory
+
+        while True:
+            try:
+                matches = dd.groups.search({'name': sg.name})
+                return matches[0] if len(matches) > 0 else None
+            except StormpathError as err:
+                logger.error('Failed to search for Group: {} in Directory: {} ({})'.format(sg.name, dd.name, err))
 
     def copy_group(self):
         """
@@ -40,30 +43,34 @@ class GroupMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Group, or None.
         """
-        matches = self.destination_directory.groups.search({'name': self.source_group.name})
-        if len(matches):
-            self.destination_group = matches[0]
+        dd = self.destination_directory
+        sg = self.source_group
+        dg = self.destination_group
 
-        try:
-            data = {
-                'description': self.source_group.description,
-                'name': self.source_group.name,
-                'status': self.source_group.status,
-            }
+        data = {
+            'description': sg.description,
+            'name': sg.name,
+            'status': sg.status,
+        }
 
-            if self.destination_group:
-                print 'Updating data for Group:', self.source_group.name
-                for key, value in data.iteritems():
-                    setattr(self.destination_group, key, value)
+        # If this Group already exists, we'll just update it.
+        if dg:
+            for key, value in data.items():
+                setattr(dg, key, value)
 
-                self.destination_group.save()
-            else:
-                self.destination_group = self.destination_directory.groups.create(data)
+            while True:
+                try:
+                    dg.dave()
+                    return dg
+                except StormpathError as err:
+                    logger.error('Failed to copy Group: {} into Directory: {} ({})'.format(sg.name, dd.name, err))
 
-            return self.destination_group
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy Group:', self.source_group.name
-            print err
+        # If we get here, it means we need to create the Group from scratch.
+        while True:
+            try:
+                return dd.groups.create(data)
+            except StormpathError as err:
+                logger.error('Failed to copy Group: {} into Directory: {} ({})'.format(sg.name, dd.name, err))
 
     def copy_custom_data(self):
         """
@@ -72,18 +79,18 @@ class GroupMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied CustomData, or None.
         """
+        sg = self.source_group
+        dg = self.destination_group
+        dd = self.destination_directory
+
+        for key, value in sanitize(sg.custom_data).items():
+            dg.custom_data[key] = value
+
         try:
-            source_custom_data = self.source_group.custom_data
-            copied_custom_data = self.destination_group.custom_data
-
-            for key, value in sanitize(source_custom_data).iteritems():
-                copied_custom_data[key] = value
-
-            copied_custom_data.save()
-            return copied_custom_data
+            dg.custom_data.save()
+            return dg.custom_data
         except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy CustomData for Group:', self.source_group.href
-            print err
+            logger.error('Failed to copy CustomData for Group: {} in Directory: {} ({})'.format(sg.name, dd.name, err))
 
     def migrate(self):
         """
@@ -93,9 +100,8 @@ class GroupMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The migrated Group, or None.
         """
-        copied_group = self.copy_group()
-        if copied_group:
-            copied_custom_data = self.copy_custom_data()
+        self.destination_group = self.get_destination_group()
+        self.copy_custom_data()
 
-        print 'Successfully copied Group:', copied_group.name
-        return copied_group
+        logger.info('Successfully copied Group: {}'.format(self.destination_group.name))
+        return self.destination_group
