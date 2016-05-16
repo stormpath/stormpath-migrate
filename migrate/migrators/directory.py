@@ -7,6 +7,7 @@ from stormpath.error import Error as StormpathError
 
 from . import BaseMigrator
 from .. import logger
+from ..constants import MIRROR_PROVIDER_IDS, SAML_PROVIDER_ID, STORMPATH_PROVIDER_ID
 from ..utils import sanitize
 
 
@@ -16,13 +17,27 @@ class DirectoryMigrator(BaseMigrator):
     """
     RESOURCE = 'directory'
     COLLECTION_RESOURCE = 'directories'
-    MIRROR_DIRECTORY_TYPES = ['ad', 'ldap']
-    SOCIAL_DIRECTORY_TYPES = ['google', 'facebook', 'linkedin', 'github', 'saml']
 
     def __init__(self, destination_client, source_directory):
         self.destination_client = destination_client
         self.source_directory = source_directory
         self.provider_id = dict(self.source_directory.provider).get('provider_id')
+
+    def get_destination_dir(self):
+        """
+        Retrieve the destination Directory.
+
+        :rtype: object (or None)
+        :returns: The Directory object, or None.
+        """
+        sd = self.source_directory
+
+        while True:
+            try:
+                matches = self.destination_client.directories.search({'name': sd.name.encode('utf-8')})
+                return matches[0] if len(matches) > 0 else None
+            except StormpathError as err:
+                logger.error('Failed to search for destination Directory: {} ({})'.format(sd.name, err))
 
     def copy_dir(self):
         """
@@ -32,54 +47,55 @@ class DirectoryMigrator(BaseMigrator):
         :returns: The copied Directory, or None.
         """
         sd = self.source_directory
+        dd = self.destination_directory
 
+        data = {
+            'description': sd.description,
+            'name': sd.name.encode('utf-8'),
+            'status': sd.status,
+        }
+
+        # Let's dynamically generate all provider information, if necessary.  We
+        # have to be careful doing this because if we supply this data for a
+        # Stormpath 'cloud' Directory, shit will break.
+        if self.provider_id != STORMPATH_PROVIDER_ID:
+            data['provider'] = sanitize(sd.provider)
+
+        if self.provider_id in MIRROR_PROVIDER_IDS:
+            data['provider']['agent'] = sanitize(sd.provider.agent)
+            data['provider']['agent']['config'] = sanitize(sd.provider.agent.config)
+            data['provider']['agent']['config']['account_config'] = sanitize(sd.provider.agent.config.account_config)
+            data['provider']['agent']['config']['group_config'] = sanitize(sd.provider.agent.config.group_config)
+        elif self.provider_id == SAML_PROVIDER_ID:
+            # TODO: Add this shit back in once I implement it in the underlying
+            # Python library. For now we'll copy this stuff over manually.
+            #data['provider']['attribute_statement_mapping_rules'] = sanitize(sd.provider.attribute_statement_mapping_rules)
+            data['provider']['service_provider_metadata'] = sanitize(sd.provider.service_provider_metadata)
+
+        # If the Directory already exists, we'll just update it.
+        if dd:
+            for key, value in data.iteritems():
+                setattr(dd, key, value)
+
+            while True:
+                try:
+                    dd.save()
+                    return dd
+                except StormpathError as err:
+                    logger.error('Failed to copy destination Directory: {} ({})'.format(sd.name, err))
+
+        # I'm manually setting the agent_user_dn_password field to a
+        # random string here because our API won't export any
+        # credentials, so it's impossible for me to migrate this over.
+        if data.get('provider') and data.get('provider').get('agent'):
+            data['provider']['agent']['config']['agent_user_dn_password'] = uuid4().hex
+
+        # If we get here, it means we need to create the Directory from scratch.
         while True:
             try:
-                matches = self.destination_client.directories.search({'name': sd.name.encode('utf-8')})
+                return self.destination_client.directories.create(data)
             except StormpathError as err:
-                logger.error('Failed to search for destination Directory: {} ({})'.format(sd.name, err))
-
-        if len(matches):
-            self.destination_directory = matches[0]
-
-        try:
-            data = {
-                'description': self.source_directory.description,
-                'name': self.source_directory.name,
-                'status': self.source_directory.status,
-            }
-
-            if self.provider_id != 'stormpath':
-                data['provider'] = sanitize(self.source_directory.provider)
-
-            if self.provider_id in self.MIRROR_DIRECTORY_TYPES:
-                data['provider']['agent'] = sanitize(self.source_directory.provider.agent)
-                data['provider']['agent']['config'] = sanitize(self.source_directory.provider.agent.config)
-                data['provider']['agent']['config']['account_config'] = sanitize(self.source_directory.provider.agent.config.account_config)
-                data['provider']['agent']['config']['group_config'] = sanitize(self.source_directory.provider.agent.config.group_config)
-            elif self.provider_id == 'saml':
-                #data['provider']['attribute_statement_mapping_rules'] = sanitize(self.source_directory.provider.attribute_statement_mapping_rules)
-                data['provider']['service_provider_metadata'] = sanitize(self.source_directory.provider.service_provider_metadata)
-
-            if self.destination_directory:
-                print 'Updating data for Directory:', self.source_directory.name.encode('utf-8')
-                for key, value in data.iteritems():
-                    setattr(self.destination_directory, key, value)
-
-                self.destination_directory.save()
-            else:
-                # I'm manually setting the agent_user_dn_password field to a
-                # random string here, because our API won't export any
-                # credentials, so it's impossible for me to migrate this over.
-                if data.get('provider') and data.get('provider').get('agent'):
-                    data['provider']['agent']['config']['agent_user_dn_password'] = uuid4().hex
-
-                self.destination_directory = self.destination_client.directories.create(data)
-
-            return self.destination_directory
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy Directory:', self.source_directory.name.encode('utf-8')
-            print unicode(err).encode('utf-8')
+                logger.error('Failed to copy Directory: {} ({})'.format(sd.name, err))
 
     def copy_custom_data(self):
         """
@@ -88,18 +104,18 @@ class DirectoryMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied CustomData, or None.
         """
-        try:
-            source_custom_data = self.source_directory.custom_data
-            copied_custom_data = self.destination_directory.custom_data
+        sd = self.source_directory
+        dcd = self.destination_directory.custom_data
 
-            for key, value in sanitize(source_custom_data).iteritems():
-                copied_custom_data[key] = value
+        for key, value in sanitize(sd.custom_data).items():
+            dcd[key] = value
 
-            copied_custom_data.save()
-            return copied_custom_data
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy CustomData for Directory:', self.source_directory.href
-            print err
+        while True:
+            try:
+                dcd.save()
+                return dcd
+            except StormpathError as err:
+                logger.error('Failed to copy CustomData for Directory: {} ({})'.format(sd.name, err))
 
     def copy_strength(self):
         """
@@ -108,19 +124,19 @@ class DirectoryMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Strength, or None.
         """
-        try:
-            source_strength = self.source_directory.password_policy.strength
-            copied_strength = self.destination_directory.password_policy.strength
+        sd = self.source_directory
+        ss = self.source_directory.password_policy.strength
+        ds = self.destination_directory.password_policy.strength
 
-            for field in copied_strength.writable_attrs:
-                copied_strength[field] = source_strength[field]
+        for field in ss.writable_attrs:
+            ds[field] = ss[field]
 
-            copied_strength.save()
-
-            return copied_strength
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy Strength rules Directory:', self.source_directory.href
-            print err
+        while True:
+            try:
+                ds.save()
+                return ds
+            except StormpathError as err:
+                logger.error('Failed to copy Strength rules for Directory: {} ({})'.format(sd.name, err))
 
     def migrate(self):
         """
@@ -136,13 +152,14 @@ class DirectoryMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The migrated Directory, or None.
         """
-        copied_dir = self.copy_dir()
+        self.destination_directory = self.get_destination_dir()
+        self.destination_directory = self.copy_dir()
         self.copy_custom_data()
 
         # Mirror Directories don't support workflows at all, so this is moot.
         # What I'm doing here is returning immediately to avoid issues.
-        if self.provider_id not in self.MIRROR_DIRECTORY_TYPES:
+        if self.provider_id not in MIRROR_PROVIDER_IDS:
             self.copy_strength()
 
-        print 'Successfully copied Directory:', copied_dir.name.encode('utf-8')
-        return copied_dir
+        logger.info('Successfully copied Directory: {}'.format(self.destination_directory.name))
+        return self.destination_directory
