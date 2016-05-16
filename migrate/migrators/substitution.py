@@ -70,13 +70,13 @@ class SubstitutionMigrator(BaseMigrator):
 
         logger.info('Finished building index of Account HREFs.')
 
-    def migrate(self):
+    def rewrite_hrefs(self):
         """
-        Rewrites all HREFs.
+        Rewrite all hrefs.
+
+        :returns: None
         """
         dc = self.destination_client
-
-        self.build_hrefs()
 
         for app in dc.applications:
             custom_data = app.custom_data
@@ -203,3 +203,10 @@ class SubstitutionMigrator(BaseMigrator):
                                 logger.info('Successfully rewrote HREF for Account: {}'.format(acc.username))
                             except StormpathError as err:
                                 logger.error('Failed to rewrite HREF for Account: {} ({})'.format(acc.username, err))
+
+    def migrate(self):
+        """
+        Rewrites all HREFs.
+        """
+        self.build_hrefs()
+        self.rewrite_hrefs()
