@@ -18,22 +18,6 @@ class ApplicationAccountStoreMappingMigrator(BaseMigrator):
         self.destination_application = destination_application
         self.source_account_store_mapping = source_account_store_mapping
 
-    def get_destination_tenant(self):
-        """
-        Retrieve the destination Tenant.
-
-        :rtype: object (or None)
-        :returns: The Tenant, or None.
-        """
-        da = self.destination_application
-
-        while True:
-            try:
-                da.tenant.refresh()
-                return da.tenant
-            except StormpathError as err:
-                logger.error('Failed to fetch destination Tenant ({})'.format(err))
-
     def get_destination_account_store(self):
         """
         Retrieve the destination AccountStore (either Directory, Organization,
@@ -97,7 +81,7 @@ class ApplicationAccountStoreMappingMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The migrated Mapping, or None.
         """
-        self.destination_tenant = self.get_destination_tenant()
+        self.destination_tenant = self.destination_application.tenant
         self.source_account_store = self.source_account_store_mapping.account_store
         self.destination_account_store = self.get_destination_account_store()
 
@@ -129,22 +113,6 @@ class OrganizationAccountStoreMappingMigrator(BaseMigrator):
     def __init__(self, destination_organization, source_account_store_mapping):
         self.destination_organization = destination_organization
         self.source_account_store_mapping = source_account_store_mapping
-
-    def get_destination_tenant(self):
-        """
-        Retrieve the destination Tenant.
-
-        :rtype: object (or None)
-        :returns: The Tenant, or None.
-        """
-        do = self.destination_organization
-
-        while True:
-            try:
-                do.tenant.refresh()
-                return do.tenant
-            except StormpathError as err:
-                logger.error('Failed to fetch destination Tenant ({})'.format(err))
 
     def get_destination_account_store(self):
         """
@@ -208,7 +176,7 @@ class OrganizationAccountStoreMappingMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The migrated Mapping, or None.
         """
-        self.destination_tenant = self.get_destination_tenant()
+        self.destination_tenant = self.destination_organization.tenant
         self.source_account_store = self.source_account_store_mapping.account_store
         self.destination_account_store = self.get_destination_account_store()
 
