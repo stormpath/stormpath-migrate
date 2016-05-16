@@ -4,6 +4,7 @@
 from stormpath.error import Error as StormpathError
 
 from . import BaseMigrator
+from .. import logger
 from ..utils import sanitize
 
 
@@ -17,21 +18,23 @@ class OrganizationMigrator(BaseMigrator):
     def __init__(self, destination_client, source_organization):
         self.destination_client = destination_client
         self.source_organization = source_organization
-        self.destination_organization = None
 
-    def get_custom_data(self):
+    def get_destination_org(self):
         """
-        Retrieve the CustomData.
+        Retrieve the destination Organization.
 
         :rtype: object (or None)
-        :returns: The CustomData object, or None.
+        :returns: The Organization object, or None.
         """
-        try:
-            dict(self.source_organization.custom_data)
-            return self.source_organization.custom_data
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not fetch CustomData for Organization:', self.source_organization.href
-            print err
+        dc = self.destination_client
+        so = self.source_organization
+
+        while True:
+            try:
+                matches = dc.organizations.search({'name': so.name})
+                return matches[0] if len(matches) > 0 else None
+            except StormpathError as err:
+                logger.error('Failed to search for Organization: {} ({})'.format(so.name, err))
 
     def copy_organization(self):
         """
@@ -40,31 +43,36 @@ class OrganizationMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied Organization, or None.
         """
-        matches = self.destination_client.tenant.organizations.search({'name': self.source_organization.name})
-        if len(matches):
-            self.destination_organization = matches[0]
+        so = self.source_organization
+        dc = self.destination_client
+        do = self.destination_organization
 
-        try:
-            data = {
-                'description': self.source_organization.description,
-                'name': self.source_organization.name,
-                'name_key': self.source_organization.name_key,
-                'status': self.source_organization.status,
-            }
+        data = {
+            'description': so.description,
+            'name': so.name,
+            'name_key': so.name_key,
+            'status': so.status,
+        }
 
-            if self.destination_organization:
-                print 'Updating data for Organization:', self.source_organization.name
-                for key, value in data.iteritems():
-                    setattr(self.destination_organization, key, value)
+        # If this Organization already exists, we'll just update it.
+        if do:
+            for key, value in data.items():
+                setattr(do, key, value)
 
-                self.destination_organization.save()
-            else:
-                self.destination_organization = self.destination_client.tenant.organizations.create(data)
+            while True:
+                try:
+                    do.save()
+                    return do
+                except StormpathError as err:
+                    logger.error('Failed to copy Organization: {} ({})'.format(so.name, err))
 
-            return self.destination_organization
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy Organization:', self.source_organization.name
-            print err
+        # If we get here, it means we need to create the Organization from
+        # scratch.
+        while True:
+            try:
+                return dc.tenant.organizations.create(data)
+            except StormpathError as err:
+                logger.error('Failed to copy Organization: {} ({})'.format(so.name, err))
 
     def copy_custom_data(self):
         """
@@ -73,18 +81,18 @@ class OrganizationMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The copied CustomData, or None.
         """
-        try:
-            source_custom_data = self.source_organization.custom_data
-            copied_custom_data = self.destination_organization.custom_data
+        so = self.source_organization
+        do = self.destination_organization
 
-            for key, value in sanitize(source_custom_data).iteritems():
-                copied_custom_data[key] = value
+        for key, value in sanitize(so.custom_data).items():
+            do.custom_data[key] = value
 
-            copied_custom_data.save()
-            return copied_custom_data
-        except StormpathError, err:
-            print '[SOURCE] | [ERROR]: Could not copy CustomData for Organization:', self.source_organization.href
-            print err
+        while True:
+            try:
+                do.custom_data.save()
+                return do.custom_data
+            except StormpathError as err:
+                logger.error('Failed to copy CustomData for Organization: {} ({})'.format(so.name, err))
 
     def migrate(self):
         """
@@ -94,8 +102,9 @@ class OrganizationMigrator(BaseMigrator):
         :rtype: object (or None)
         :returns: The migrated Organization, or None.
         """
-        copied_org = self.copy_organization()
+        self.destination_organization = self.get_destination_org()
+        self.destination_organization = self.copy_organization()
         self.copy_custom_data()
 
-        print 'Successfully copied Organization:', copied_org.name
-        return copied_org
+        logger.info('Successfully copied Organization: {}'.format(self.destination_organization.name))
+        return self.destination_application
