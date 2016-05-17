@@ -60,7 +60,7 @@ class GroupMigrator(BaseMigrator):
 
             while True:
                 try:
-                    dg.dave()
+                    dg.save()
                     return dg
                 except StormpathError as err:
                     logger.error('Failed to copy Group: {} into Directory: {} ({})'.format(sg.name, dd.name, err))
@@ -101,6 +101,7 @@ class GroupMigrator(BaseMigrator):
         :returns: The migrated Group, or None.
         """
         self.destination_group = self.get_destination_group()
+        self.destination_group = self.copy_group()
         self.copy_custom_data()
 
         logger.info('Successfully copied Group: {}'.format(self.destination_group.name))
