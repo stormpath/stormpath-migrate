@@ -79,6 +79,9 @@ class DirectoryWorkflowMigrator(BaseMigrator):
         spp = sd.password_policy
         dpp = dd.password_policy
 
+        spsp = spp.strength
+        dpsp = dpp.strength
+
         # First, we'll copy over the PasswordPolicy properties directly.
         # We have to do this *first* since there isn't a good way to recurse
         # into this object.
@@ -92,12 +95,22 @@ class DirectoryWorkflowMigrator(BaseMigrator):
             except StormpathError as err:
                 logger.error('Failed to copy PasswordPolicy for Directory: {} ({})'.format(sd.name, err))
 
+        # Next, we'll copy over the PasswordStrength properties.
+        for attr in spsp.writable_attrs:
+            setattr(dpsp, attr, getattr(spsp, attr))
+
+        while True:
+            try:
+                dpsp.save()
+                break
+            except StormpathError as err:
+                logger.error('Failed to copy PasswordStrength for Directory: {} ({})'.format(sd.name, err))
+
         # Once we get here, we're going to copy over all the
         # AccountCreationPolicy email templates.
         resources_to_copy = [
             'reset_email_templates',
             'reset_success_email_templates',
-            'strength'
         ]
 
         for resource in resources_to_copy:
@@ -123,7 +136,7 @@ class DirectoryWorkflowMigrator(BaseMigrator):
         :returns: The migrated Directory, or None.
         """
         self.copy_account_creation_policy()
-        self.password_policy()
+        self.copy_password_policy()
 
         logger.info('Successfully copied Workflow for Directory: {}'.format(self.destination_directory.name))
         return self.destination_directory
