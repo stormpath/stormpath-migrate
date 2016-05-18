@@ -101,7 +101,7 @@ class GroupMembershipMigrator(BaseMigrator):
         :returns: The migrated Membership, or None.
         """
         sa = self.source_group_membership.account
-        sd = self.source_group_membership.directory
+        sd = self.source_group_membership.account.directory
         sg = self.source_group_membership.group
 
         self.destination_directory = self.get_destination_directory()
@@ -116,11 +116,9 @@ class GroupMembershipMigrator(BaseMigrator):
             logger.critical('The Directory: {} does not exist in the destination. This is a fatal error.'.format(sg.directory.name))
             raise RuntimeError('Read the log.')
         elif not self.destination_group:
-            logger.critical('The Group: {} does not exist in the destination Directory: {}.  This is a fatal error.'.format(sg.name, sd.name))
-            raise RuntimeError('Read the log.')
+            logger.warning('The Group: {} does not exist in the destination Directory: {}.  Skipping Membership migration.'.format(sg.name, sd.name))
         elif not self.destination_account:
-            logger.critical('The Account: {} does not exist in the destination Directory: {}.  This is a fatal error.'.format(sa.username, sd.name))
-            raise RuntimeError('Read the log.')
+            logger.warning('The Account: {} does not exist in the destination Directory: {}.  Skipping Membership migration.'.format(sa.username, sd.name))
 
         logger.info('Successfully copied GroupMembership for Account: {} and Group: {} in Directory: {}'.format(sa.username, sg.name, sd.name))
         return self.copy_membership()
