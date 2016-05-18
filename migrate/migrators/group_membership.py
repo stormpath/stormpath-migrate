@@ -65,7 +65,7 @@ class GroupMembershipMigrator(BaseMigrator):
 
         while True:
             try:
-                matches = dd.accounts.search({'username': sa.name})
+                matches = dd.accounts.search({'username': sa.username})
                 return matches[0] if len(matches) > 0 else None
             except StormpathError as err:
                 logger.error('Failed to search for Account: {} in Directory: {} ({})'.format(sa.username, dd.name, err))
@@ -120,5 +120,7 @@ class GroupMembershipMigrator(BaseMigrator):
         elif not self.destination_account:
             logger.warning('The Account: {} does not exist in the destination Directory: {}.  Skipping Membership migration.'.format(sa.username, sd.name))
 
+        membership = self.copy_membership()
         logger.info('Successfully copied GroupMembership for Account: {} and Group: {} in Directory: {}'.format(sa.username, sg.name, sd.name))
-        return self.copy_membership()
+
+        return membership
