@@ -38,7 +38,7 @@ class AccountMigrator(BaseMigrator):
                 sa.custom_data.refresh()
                 return sa.custom_data
             except StormpathError as err:
-                logger.error('Failed to fetch CustomData for source Account: {} ({})'.format(sa.email, err))
+                logger.error('Failed to fetch CustomData for source Account: {} ({})'.format(sa.username, err))
 
     def get_destination_account(self):
         """
@@ -49,10 +49,15 @@ class AccountMigrator(BaseMigrator):
         """
         directory = self.destination_directory
         username = self.source_account.username
+        email = self.source_account.email
 
         while True:
             try:
                 matches = directory.accounts.search({'username': username})
+
+                if len(matches) == 0:
+                    matches = directory.accounts.search({'email': email})
+
                 return matches[0] if len(matches) > 0 else None
             except StormpathError as err:
                 logger.error('Failed to search for Account: {} in destination Directory: {} ({})'.format(username, directory.name, err))
@@ -97,7 +102,7 @@ class AccountMigrator(BaseMigrator):
                     da.save()
                     return da
                 except StormpathError as err:
-                    logger.error('Failed to update Account: {} in destination Directory: {} ({})'.format(sa.email, dd.name, err))
+                    logger.error('Failed to update Account: {} in destination Directory: {} ({})'.format(sa.username, dd.name, err))
 
         # If we get here, it means the Account needs to be created in the
         # destination Directory.
@@ -112,7 +117,7 @@ class AccountMigrator(BaseMigrator):
                     })
                     return da
                 except StormpathError as err:
-                    logger.error('Failed to create {} Account: {} in destination Directory: {} ({})'.format(provider_id.title(), sa.email, dd.name, err))
+                    logger.error('Failed to create {} Account: {} in destination Directory: {} ({})'.format(provider_id.title(), sa.username, dd.name, err))
 
         elif provider_id == 'stormpath':
             if self.random_password:
@@ -123,7 +128,7 @@ class AccountMigrator(BaseMigrator):
                         da = dd.accounts.create(data, registration_workflow_enabled=False)
                         return da
                     except StormpathError as err:
-                        logger.error('Failed to create Account: {} in destination Directory: {} ({})'.format(sa.email, dd.name, err))
+                        logger.error('Failed to create Account: {} in destination Directory: {} ({})'.format(sa.username, dd.name, err))
 
             # If we get here, if means we're going to use a pre-existing
             # password hash to create this Account.
@@ -132,10 +137,10 @@ class AccountMigrator(BaseMigrator):
                     da = dd.accounts.create(data, password_format='mcf', registration_workflow_enabled=False)
                     return da
                 except StormpathError as err:
-                    logger.error('Failed to create Account: {} in destination Directory: {} ({})'.format(sa.email, dd.name, err))
+                    logger.error('Failed to create Account: {} in destination Directory: {} ({})'.format(sa.username, dd.name, err))
 
         else:
-            logger.warning('Skipping {} Account creation for Account: {} in destination Directory: {} because Account is not a Cloud or Social Account.'.format(provider_id.upper(), da.email, dd.name))
+            logger.warning('Skipping {} Account creation for Account: {} in destination Directory: {} because Account is not a Cloud or Social Account.'.format(provider_id.upper(), da.username, dd.name))
 
     def copy_custom_data(self):
         """
@@ -155,7 +160,7 @@ class AccountMigrator(BaseMigrator):
                 da.custom_data.save()
                 return da.custom_data
             except StormpathError, err:
-                logger.error('Failed to copy CustomData for source Account: {} into destination Account: {} ({})'.format(sa.email, da.email, err))
+                logger.error('Failed to copy CustomData for source Account: {} into destination Account: {} ({})'.format(sa.username, da.username, err))
 
     def migrate(self):
         """
@@ -176,7 +181,7 @@ class AccountMigrator(BaseMigrator):
 
         if self.destination_account:
             self.copy_custom_data()
-            logger.info('Successfully copied Account: {} into destination Directory: {}'.format(sa.email, dd.name))
+            logger.info('Successfully copied Account: {} into destination Directory: {}'.format(sa.username, dd.name))
 
             return self.destination_account
         else:
