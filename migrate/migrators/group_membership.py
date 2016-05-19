@@ -119,8 +119,8 @@ class GroupMembershipMigrator(BaseMigrator):
             logger.warning('The Group: {} does not exist in the destination Directory: {}.  Skipping Membership migration.'.format(sg.name, sd.name))
         elif not self.destination_account:
             logger.warning('The Account: {} does not exist in the destination Directory: {}.  Skipping Membership migration.'.format(sa.username, sd.name))
+        else:
+            membership = self.copy_membership()
+            logger.info('Successfully copied GroupMembership for Account: {} and Group: {} in Directory: {}'.format(sa.username, sg.name, sd.name))
 
-        membership = self.copy_membership()
-        logger.info('Successfully copied GroupMembership for Account: {} and Group: {} in Directory: {}'.format(sa.username, sg.name, sd.name))
-
-        return membership
+            return membership
