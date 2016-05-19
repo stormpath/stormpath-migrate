@@ -4,13 +4,14 @@
 from json import loads
 
 from . import *
+from .. import logger
+from ..constants import MIRROR_PROVIDER_IDS
 
 
 class TenantMigrator(BaseMigrator):
     """
     This class manages a migration from one Stormpath Tenant to another.
     """
-    MIRROR_DIRECTORY_TYPES = ['ad', 'ldap']
 
     def migrate(self):
         """
@@ -28,12 +29,12 @@ class TenantMigrator(BaseMigrator):
 
             provider_id = dict(directory.provider).get('provider_id')
 
-            if provider_id not in self.MIRROR_DIRECTORY_TYPES or provider_id == 'saml':
+            if provider_id not in MIRROR_PROVIDER_IDS or provider_id == 'saml':
                 for group in directory.groups:
                     migrator = GroupMigrator(destination_directory=destination_directory, source_group=group)
                     migrator.migrate()
 
-            if provider_id not in self.MIRROR_DIRECTORY_TYPES and provider_id != 'saml':
+            if provider_id not in MIRROR_PROVIDER_IDS and provider_id != 'saml':
                 for account in directory.accounts:
                     hash = None
                     random_password = False
@@ -48,7 +49,7 @@ class TenantMigrator(BaseMigrator):
 
                     if not hash:
                         random_password = True
-                        print '[SOURCE] | [WARNING]: No password hash found for Account:', account.email, 'Using random password.'
+                        logger.warning('No password hash found for Account: {}.  Using random password.'.format(account.username))
 
                     migrator = AccountMigrator(destination_directory=destination_directory, source_account=account, source_password=hash, random_password=random_password)
                     migrated_account = migrator.migrate()
@@ -56,11 +57,11 @@ class TenantMigrator(BaseMigrator):
                     if not migrated_account:
                         continue
 
-                    for group in account.groups:
-                        migrator = GroupMembershipMigrator(destination_client=self.dst, destination_account=migrated_account, source_group=group)
+                    for membership in account.group_memberships:
+                        migrator = GroupMembershipMigrator(destination_client=self.dst, source_group_membership=membership)
                         migrator.migrate()
 
-            if provider_id not in self.MIRROR_DIRECTORY_TYPES:
+            if provider_id not in MIRROR_PROVIDER_IDS:
                 migrator = DirectoryWorkflowMigrator(destination_directory=destination_directory, source_directory=directory)
                 migrator.migrate()
 
