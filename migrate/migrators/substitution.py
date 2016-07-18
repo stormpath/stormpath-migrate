@@ -1,6 +1,8 @@
 """Our Substitution Migrator."""
 
 
+from csv import QUOTE_ALL, writer
+
 from stormpath.error import Error as StormpathError
 
 from . import BaseMigrator
@@ -69,6 +71,24 @@ class SubstitutionMigrator(BaseMigrator):
                         self.hrefs[sa.href] = account.href
 
         logger.info('Finished building index of Account HREFs.')
+
+    def output_hrefs(self):
+        """
+        Output a CSV file with both the OLD resource HREFs, and the NEW resource
+        HREFs.  This is useful when a client has their database linked to
+        Stormpath HREFs, as it gives them a way to pragmatically update their
+        database HREFs as necessary.
+        """
+        logger.info('Generating CSV file of migrated resource mappings.')
+
+        with open('stormpath-mappings.csv', 'wb') as csvfile:
+            csv_writer = writer(csvfile, delimiter=',', quotechar='"', quoting=QUOTE_ALL)
+            csv_writer.writerow(['original_href', 'migrated_href'])
+
+            for old_href, new_href in self.hrefs.items():
+                csv_writer.writerow([old_href, new_href])
+
+        logger.info('Finished generating CSV file of migrated resource mappings.')
 
     def rewrite_hrefs(self):
         """
@@ -209,4 +229,5 @@ class SubstitutionMigrator(BaseMigrator):
         Rewrites all HREFs.
         """
         self.build_hrefs()
+        self.output_hrefs()
         self.rewrite_hrefs()
