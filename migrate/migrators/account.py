@@ -112,7 +112,7 @@ class AccountMigrator(BaseMigrator):
                     da = dd.accounts.create({
                         'provider_data': {
                             'provider_id': provider_id,
-                            'access_token': provider_data.access_token,
+                            'access_token': dict(provider_data)['access_token'],
                         }
                     })
                     return da
