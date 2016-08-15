@@ -42,14 +42,10 @@ class GroupMigratorTest(TestCase):
         self.dir.delete()
         self.dst_dir.delete()
 
-    def test_get_custom_data(self):
-        migrator = GroupMigrator(destination_directory=self.dst_dir, source_group=self.group)
-        custom_data = migrator.get_custom_data()
-        self.assertTrue(custom_data)
-        self.assertEqual(custom_data['hi'], 'there')
-
     def test_copy_group(self):
         migrator = GroupMigrator(destination_directory=self.dst_dir, source_group=self.group)
+        migrator.get_destination_group()
+        migrator.get_destination_group()
         copied_group = migrator.copy_group()
 
         self.assertTrue(copied_group)
@@ -59,6 +55,7 @@ class GroupMigratorTest(TestCase):
 
     def test_copy_custom_data(self):
         migrator = GroupMigrator(destination_directory=self.dst_dir, source_group=self.group)
+        migrator.get_destination_group()
         copied_group = migrator.copy_group()
         copied_custom_data = migrator.copy_custom_data()
 
