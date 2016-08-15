@@ -106,5 +106,5 @@ class OrganizationMigrator(BaseMigrator):
         self.destination_organization = self.copy_org()
         self.copy_custom_data()
 
-        logger.info('Successfully copied Organization: {}'.format(self.destination_organization.name))
+        logger.info('Successfully copied Organization: {}'.format(self.destination_organization.name.encode('utf-8')))
         return self.destination_organization
