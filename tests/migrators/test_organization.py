@@ -36,11 +36,6 @@ class OrganizationMigratorTest(TestCase):
         if self.dst_org:
             self.dst_org.delete()
 
-    def test_get_custom_data(self):
-        migrator = OrganizationMigrator(destination_client=self.dst, source_organization=self.org)
-        custom_data = migrator.get_custom_data()
-        self.assertEqual(custom_data['hi'], 'there')
-
     def test_copy_org_organization(self):
         migrator = OrganizationMigrator(destination_client=self.dst, source_organization=self.org)
         copied_org = migrator.copy_organization()
