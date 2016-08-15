@@ -72,23 +72,6 @@ class ApplicationAccountStoreMappingMigratorTest(TestCase):
         self.dst_dir.delete()
         self.dst_org.delete()
 
-    def test_get_source_account_store(self):
-        migrator = ApplicationAccountStoreMappingMigrator(destination_application=self.src_app, source_account_store_mapping=self.src_mapping_1)
-        account_store = migrator.get_source_account_store()
-        self.assertEqual(account_store.name, self.src_dir.name)
-        self.assertEqual(account_store.description, self.src_dir.description)
-
-        migrator = ApplicationAccountStoreMappingMigrator(destination_application=self.src_app, source_account_store_mapping=self.src_mapping_2)
-        account_store = migrator.get_source_account_store()
-        self.assertEqual(account_store.name, self.src_org.name)
-        self.assertEqual(account_store.description, self.src_org.description)
-        self.assertEqual(account_store.name_key, self.src_org.name_key)
-
-        migrator = ApplicationAccountStoreMappingMigrator(destination_application=self.src_app, source_account_store_mapping=self.src_mapping_3)
-        account_store = migrator.get_source_account_store()
-        self.assertEqual(account_store.name, self.src_group.name)
-        self.assertEqual(account_store.description, self.src_group.description)
-
     def test_get_destination_account_store(self):
         migrator = ApplicationAccountStoreMappingMigrator(destination_application=self.src_app, source_account_store_mapping=self.src_mapping_1)
         migrator.get_source_account_store()
@@ -111,6 +94,7 @@ class ApplicationAccountStoreMappingMigratorTest(TestCase):
 
     def test_copy_mapping(self):
         migrator = ApplicationAccountStoreMappingMigrator(destination_application=self.dst_app, source_account_store_mapping=self.src_mapping_1)
+        migrator.destination_account_store = migrator.get_destination_account_store()
         dst_mapping = migrator.copy_mapping()
         self.assertEqual(dst_mapping.application.name, self.src_app.name)
         self.assertEqual(dst_mapping.application.description, self.src_app.description)
