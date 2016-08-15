@@ -89,7 +89,7 @@ class GroupMigrator(BaseMigrator):
         try:
             dg.custom_data.save()
             return dg.custom_data
-        except StormpathError, err:
+        except StormpathError as err:
             logger.error('Failed to copy CustomData for Group: {} in Directory: {} ({})'.format(sg.name.encode('utf-8'), dd.name.encode('utf-8'), err))
 
     def migrate(self):
