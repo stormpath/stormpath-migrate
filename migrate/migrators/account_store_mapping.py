@@ -37,7 +37,7 @@ class ApplicationAccountStoreMappingMigrator(BaseMigrator):
                 matches = getattr(tenant, collection).search({'name': sas.name})
                 return matches[0] if len(matches) > 0 else None
             except StormpathError as err:
-                logger.error('Failed to fetch destination {}: {} ({})'.format(klass, sas.name, err))
+                logger.error('Failed to fetch destination {}: {} ({})'.format(klass, sas.name.encode('utf-8'), err))
 
     def copy_mapping(self):
         """
@@ -67,9 +67,9 @@ class ApplicationAccountStoreMappingMigrator(BaseMigrator):
                 })
             except StormpathError as err:
                 logger.error('Failed to copy AccountStoreMapping from Application: {} to {} {} ({})'.format(
-                    da.name,
+                    da.name.encode('utf-8'),
                     das.__class__.__name__,
-                    das.name,
+                    das.name.encode('utf-8'),
                     err
                 ))
 
@@ -87,17 +87,17 @@ class ApplicationAccountStoreMappingMigrator(BaseMigrator):
 
         if not self.destination_account_store:
             logger.warning('Skipping creation of AccountStoreMapping from Application: {} to {} {} (The destination AccountStore does not exist)'.format(
-                self.destination_application.name,
+                self.destination_application.name.encode('utf-8'),
                 self.source_account_store.__class__.__name__,
-                self.source_account_store.name
+                self.source_account_store.name.encode('utf-8')
             ))
             return
 
         mapping = self.copy_mapping()
         logger.info('Successfully copied source AccountStoreMapping from Application: {} to {} {}.'.format(
-            self.destination_application.name,
+            self.destination_application.name.encode('utf-8'),
             self.destination_account_store.__class__.__name__,
-            self.destination_account_store.name
+            self.destination_account_store.name.encode('utf-8')
         ))
 
         return mapping
@@ -132,7 +132,7 @@ class OrganizationAccountStoreMappingMigrator(BaseMigrator):
                 matches = getattr(tenant, collection).search({'name': sas.name})
                 return matches[0] if len(matches) > 0 else None
             except StormpathError as err:
-                logger.error('Failed to fetch destination {}: {} ({})'.format(klass, sas.name, err))
+                logger.error('Failed to fetch destination {}: {} ({})'.format(klass, sas.name.encode('utf-8'), err))
 
     def copy_mapping(self):
         """
@@ -162,9 +162,9 @@ class OrganizationAccountStoreMappingMigrator(BaseMigrator):
                 })
             except StormpathError as err:
                 logger.error('Failed to copy AccountStoreMapping from Organization: {} to {} {} ({})'.format(
-                    do.name,
+                    do.name.encode('utf-8'),
                     das.__class__.__name__,
-                    das.name,
+                    das.name.encode('utf-8'),
                     err
                 ))
 
@@ -182,17 +182,17 @@ class OrganizationAccountStoreMappingMigrator(BaseMigrator):
 
         if not self.destination_account_store:
             logger.warning('Skipping creation of AccountStoreMapping from Organization: {} to {} {} (The destination AccountStore does not exist)'.format(
-                self.destination_organization.name,
+                self.destination_organization.name.encode('utf-8'),
                 self.source_account_store.__class__.__name__,
-                self.source_account_store.name
+                self.source_account_store.name.encode('utf-8')
             ))
             return
 
         mapping = self.copy_mapping()
         logger.info('Successfully copied source AccountStoreMapping from Organization: {} to {} {}.'.format(
-            self.destination_organization.name,
+            self.destination_organization.name.encode('utf-8'),
             self.destination_account_store.__class__.__name__,
-            self.destination_account_store.name
+            self.destination_account_store.name.encode('utf-8')
         ))
 
         return mapping
