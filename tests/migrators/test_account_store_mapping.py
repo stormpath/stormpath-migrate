@@ -94,7 +94,8 @@ class ApplicationAccountStoreMappingMigratorTest(TestCase):
 
     def test_copy_mapping(self):
         migrator = ApplicationAccountStoreMappingMigrator(destination_application=self.dst_app, source_account_store_mapping=self.src_mapping_1)
-        migrator.destination_tenant = migrator.destination_organization.tenant
+        migrator.destination_tenant = migrator.destination_application.tenant
+        migrator.source_account_store = migrator.source_account_store_mapping.account_store
         migrator.destination_account_store = migrator.get_destination_account_store()
         dst_mapping = migrator.copy_mapping()
         self.assertEqual(dst_mapping.application.name, self.src_app.name)
