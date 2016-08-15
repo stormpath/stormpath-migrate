@@ -51,6 +51,7 @@ class AccountMigratorTest(TestCase):
             source_account = self.account,
             source_password = '$2a$13$7nOY.0Y9BmFUx77cT/3bZO8rTSDbi0a1JPHdzqyp6YexrNTYKZbQ2',
         )
+        migrator.get_destination_account()
         copied_account = migrator.copy_account()
 
         self.assertEqual(copied_account.username, self.account.username)
