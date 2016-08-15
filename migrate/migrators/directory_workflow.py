@@ -42,7 +42,7 @@ class DirectoryWorkflowMigrator(BaseMigrator):
                 dacp.save()
                 break
             except StormpathError as err:
-                logger.error('Failed to copy AccountCreationPolicy for Directory: {} ({})'.format(sd.name, err))
+                logger.error('Failed to copy AccountCreationPolicy for Directory: {} ({})'.format(sd.name.encode('utf-8'), err))
 
         # Once we get here, we're going to copy over all the
         # AccountCreationPolicy email templates.
@@ -64,7 +64,7 @@ class DirectoryWorkflowMigrator(BaseMigrator):
                     dr.save()
                     break
                 except StormpathError as err:
-                    logger.error('Failed to copy {} for Directory: {} ({})'.format(resource, sd.name, err))
+                    logger.error('Failed to copy {} for Directory: {} ({})'.format(resource, sd.name.encode('utf-8'), err))
 
     def copy_password_policy(self):
         """
@@ -93,7 +93,7 @@ class DirectoryWorkflowMigrator(BaseMigrator):
                 dpp.save()
                 break
             except StormpathError as err:
-                logger.error('Failed to copy PasswordPolicy for Directory: {} ({})'.format(sd.name, err))
+                logger.error('Failed to copy PasswordPolicy for Directory: {} ({})'.format(sd.name.encode('utf-8'), err))
 
         # Next, we'll copy over the PasswordStrength properties.
         for attr in spsp.writable_attrs:
@@ -104,7 +104,7 @@ class DirectoryWorkflowMigrator(BaseMigrator):
                 dpsp.save()
                 break
             except StormpathError as err:
-                logger.error('Failed to copy PasswordStrength for Directory: {} ({})'.format(sd.name, err))
+                logger.error('Failed to copy PasswordStrength for Directory: {} ({})'.format(sd.name.encode('utf-8'), err))
 
         # Once we get here, we're going to copy over all the
         # AccountCreationPolicy email templates.
@@ -125,7 +125,7 @@ class DirectoryWorkflowMigrator(BaseMigrator):
                     dr.save()
                     break
                 except StormpathError as err:
-                    logger.error('Failed to copy {} for Directory: {} ({})'.format(resource, sd.name, err))
+                    logger.error('Failed to copy {} for Directory: {} ({})'.format(resource, sd.name.encode('utf-8'), err))
 
     def migrate(self):
         """
@@ -138,5 +138,5 @@ class DirectoryWorkflowMigrator(BaseMigrator):
         self.copy_account_creation_policy()
         self.copy_password_policy()
 
-        logger.info('Successfully copied Workflow for Directory: {}'.format(self.destination_directory.name))
+        logger.info('Successfully copied Workflow for Directory: {}'.format(self.destination_directory.name.encode('utf-8')))
         return self.destination_directory

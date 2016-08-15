@@ -109,9 +109,9 @@ class SubstitutionMigrator(BaseMigrator):
                     while True:
                         try:
                             custom_data.save()
-                            logger.info('Successfully rewrote HREF for Application: {}'.format(app.name))
+                            logger.info('Successfully rewrote HREF for Application: {}'.format(app.name.encode('utf-8')))
                         except StormpathError as err:
-                            logger.error('Failed to rewrite HREF for Application: {} ({})'.format(app.name, err))
+                            logger.error('Failed to rewrite HREF for Application: {} ({})'.format(app.name.encode('utf-8'), err))
 
                 if isinstance(value, str) and value in self.hrefs:
                     custom_data[key] = self.hrefs[value]
@@ -119,9 +119,9 @@ class SubstitutionMigrator(BaseMigrator):
                     while True:
                         try:
                             custom_data.save()
-                            logger.info('Successfully rewrote HREF for Application: {}'.format(app.name))
+                            logger.info('Successfully rewrote HREF for Application: {}'.format(app.name.encode('utf-8')))
                         except StormpathError as err:
-                            logger.error('Failed to rewrite HREF for Application: {} ({})'.format(app.name, err))
+                            logger.error('Failed to rewrite HREF for Application: {} ({})'.format(app.name.encode('utf-8'), err))
 
         for dir in dc.directories:
             custom_data = dir.custom_data
@@ -134,9 +134,9 @@ class SubstitutionMigrator(BaseMigrator):
                     while True:
                         try:
                             custom_data.save()
-                            logger.info('Successfully rewrote HREF for Directory: {}'.format(dir.name))
+                            logger.info('Successfully rewrote HREF for Directory: {}'.format(dir.name.encode('utf-8')))
                         except StormpathError as err:
-                            logger.error('Failed to rewrite HREF for Directory: {} ({})'.format(dir.name, err))
+                            logger.error('Failed to rewrite HREF for Directory: {} ({})'.format(dir.name.encode('utf-8'), err))
 
                 if isinstance(value, str) and value in self.hrefs:
                     custom_data[key] = self.hrefs[value]
@@ -144,9 +144,9 @@ class SubstitutionMigrator(BaseMigrator):
                     while True:
                         try:
                             custom_data.save()
-                            logger.info('Successfully rewrote HREF for Directory: {}'.format(dir.name))
+                            logger.info('Successfully rewrote HREF for Directory: {}'.format(dir.name.encode('utf-8')))
                         except StormpathError as err:
-                            logger.error('Failed to rewrite HREF for Directory: {} ({})'.format(dir.name, err))
+                            logger.error('Failed to rewrite HREF for Directory: {} ({})'.format(dir.name.encode('utf-8'), err))
 
         for org in dc.tenant.organizations:
             custom_data = org.custom_data
@@ -159,9 +159,9 @@ class SubstitutionMigrator(BaseMigrator):
                     while True:
                         try:
                             custom_data.save()
-                            logger.info('Successfully rewrote HREF for Organization: {}'.format(org.name))
+                            logger.info('Successfully rewrote HREF for Organization: {}'.format(org.name.encode('utf-8')))
                         except StormpathError as err:
-                            logger.error('Failed to rewrite HREF for Organization: {} ({})'.format(org.name, err))
+                            logger.error('Failed to rewrite HREF for Organization: {} ({})'.format(org.name.encode('utf-8'), err))
 
                 if isinstance(value, str) and value in self.hrefs:
                     custom_data[key] = self.hrefs[value]
@@ -169,9 +169,9 @@ class SubstitutionMigrator(BaseMigrator):
                     while True:
                         try:
                             custom_data.save()
-                            logger.info('Successfully rewrote HREF for Organization: {}'.format(org.name))
+                            logger.info('Successfully rewrote HREF for Organization: {}'.format(org.name.encode('utf-8')))
                         except StormpathError as err:
-                            logger.error('Failed to rewrite HREF for Organization: {} ({})'.format(org.name, err))
+                            logger.error('Failed to rewrite HREF for Organization: {} ({})'.format(org.name.encode('utf-8'), err))
 
         for group in dc.groups:
             custom_data = group.custom_data
@@ -184,9 +184,9 @@ class SubstitutionMigrator(BaseMigrator):
                     while True:
                         try:
                             custom_data.save()
-                            logger.info('Successfully rewrote HREF for Group: {}'.format(group.name))
+                            logger.info('Successfully rewrote HREF for Group: {}'.format(group.name.encode('utf-8')))
                         except StormpathError as err:
-                            logger.error('Failed to rewrite HREF for Group: {} ({})'.format(group.name, err))
+                            logger.error('Failed to rewrite HREF for Group: {} ({})'.format(group.name.encode('utf-8'), err))
 
                 if isinstance(value, str) and value in self.hrefs:
                     custom_data[key] = self.hrefs[value]
@@ -194,9 +194,9 @@ class SubstitutionMigrator(BaseMigrator):
                     while True:
                         try:
                             custom_data.save()
-                            logger.info('Successfully rewrote HREF for Group: {}'.format(group.name))
+                            logger.info('Successfully rewrote HREF for Group: {}'.format(group.name.encode('utf-8')))
                         except StormpathError as err:
-                            logger.error('Failed to rewrite HREF for Group: {} ({})'.format(group.name, err))
+                            logger.error('Failed to rewrite HREF for Group: {} ({})'.format(group.name.encode('utf-8'), err))
 
         for directory in dc.directories:
             for acc in directory.accounts:
@@ -210,9 +210,9 @@ class SubstitutionMigrator(BaseMigrator):
                         while True:
                             try:
                                 custom_data.save()
-                                logger.info('Successfully rewrote HREF for Account: {}'.format(acc.username))
+                                logger.info('Successfully rewrote HREF for Account: {}'.format(acc.username.encode('utf-8')))
                             except StormpathError as err:
-                                logger.error('Failed to rewrite HREF for Account: {} ({})'.format(acc.username, err))
+                                logger.error('Failed to rewrite HREF for Account: {} ({})'.format(acc.username.encode('utf-8'), err))
 
                     if isinstance(value, str) and value in self.hrefs:
                         custom_data[key] = self.hrefs[value]
@@ -220,9 +220,9 @@ class SubstitutionMigrator(BaseMigrator):
                         while True:
                             try:
                                 custom_data.save()
-                                logger.info('Successfully rewrote HREF for Account: {}'.format(acc.username))
+                                logger.info('Successfully rewrote HREF for Account: {}'.format(acc.username.encode('utf-8')))
                             except StormpathError as err:
-                                logger.error('Failed to rewrite HREF for Account: {} ({})'.format(acc.username, err))
+                                logger.error('Failed to rewrite HREF for Account: {} ({})'.format(acc.username.encode('utf-8'), err))
 
     def migrate(self):
         """

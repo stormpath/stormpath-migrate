@@ -34,7 +34,7 @@ class GroupMigrator(BaseMigrator):
                 matches = dd.groups.search({'name': sg.name})
                 return matches[0] if len(matches) > 0 else None
             except StormpathError as err:
-                logger.error('Failed to search for Group: {} in Directory: {} ({})'.format(sg.name, dd.name, err))
+                logger.error('Failed to search for Group: {} in Directory: {} ({})'.format(sg.name.encode('utf-8'), dd.name.encode('utf-8'), err))
 
     def copy_group(self):
         """
@@ -63,14 +63,14 @@ class GroupMigrator(BaseMigrator):
                     dg.save()
                     return dg
                 except StormpathError as err:
-                    logger.error('Failed to copy Group: {} into Directory: {} ({})'.format(sg.name, dd.name, err))
+                    logger.error('Failed to copy Group: {} into Directory: {} ({})'.format(sg.name.encode('utf-8'), dd.name.encode('utf-8'), err))
 
         # If we get here, it means we need to create the Group from scratch.
         while True:
             try:
                 return dd.groups.create(data)
             except StormpathError as err:
-                logger.error('Failed to copy Group: {} into Directory: {} ({})'.format(sg.name, dd.name, err))
+                logger.error('Failed to copy Group: {} into Directory: {} ({})'.format(sg.name.encode('utf-8'), dd.name.encode('utf-8'), err))
 
     def copy_custom_data(self):
         """
@@ -90,7 +90,7 @@ class GroupMigrator(BaseMigrator):
             dg.custom_data.save()
             return dg.custom_data
         except StormpathError, err:
-            logger.error('Failed to copy CustomData for Group: {} in Directory: {} ({})'.format(sg.name, dd.name, err))
+            logger.error('Failed to copy CustomData for Group: {} in Directory: {} ({})'.format(sg.name.encode('utf-8'), dd.name.encode('utf-8'), err))
 
     def migrate(self):
         """
@@ -104,5 +104,5 @@ class GroupMigrator(BaseMigrator):
         self.destination_group = self.copy_group()
         self.copy_custom_data()
 
-        logger.info('Successfully copied Group: {}'.format(self.destination_group.name))
+        logger.info('Successfully copied Group: {}'.format(self.destination_group.name.encode('utf-8')))
         return self.destination_group

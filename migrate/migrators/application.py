@@ -33,7 +33,7 @@ class ApplicationMigrator(BaseMigrator):
                 matches = self.destination_client.applications.search({'name': sa.name})
                 return matches[0] if len(matches) > 0 else None
             except StormpathError as err:
-                logger.error('Failed to search for Application: {} ({})'.format(sa.name, err))
+                logger.error('Failed to search for Application: {} ({})'.format(sa.name.encode('utf-8'), err))
 
     def copy_app(self):
         """
@@ -61,7 +61,7 @@ class ApplicationMigrator(BaseMigrator):
                     da.save()
                     return da
                 except StormpathError as err:
-                    logger.error('Failed to copy Application: {} ({})'.format(sa.name, err))
+                    logger.error('Failed to copy Application: {} ({})'.format(sa.name.encode('utf-8'), err))
 
         # If we get here, it means we need to create the Application from
         # scratch.
@@ -69,7 +69,7 @@ class ApplicationMigrator(BaseMigrator):
             try:
                 return self.destination_client.applications.create(data)
             except StormpathError as err:
-                logger.error('Failed to copy Application: {} ({})'.format(sa.name, err))
+                logger.error('Failed to copy Application: {} ({})'.format(sa.name.encode('utf-8'), err))
 
     def copy_custom_data(self):
         """
@@ -89,7 +89,7 @@ class ApplicationMigrator(BaseMigrator):
                 da.custom_data.save()
                 return da.custom_data
             except StormpathError as err:
-                logger.error('Failed to copy CustomData for source Application: {} into destination Account: {} ({})'.format(sa.name, da.name, err))
+                logger.error('Failed to copy CustomData for source Application: {} into destination Account: {} ({})'.format(sa.name.encode('utf-8'), da.name.encode('utf-8'), err))
 
     def copy_oauth_policy(self):
         """
@@ -112,7 +112,7 @@ class ApplicationMigrator(BaseMigrator):
                 dop.save()
                 return dop
             except StormpathError as err:
-                logger.error('Failed to copy OAuthPolicy for Application: {} ({})'.format(sa.name, err))
+                logger.error('Failed to copy OAuthPolicy for Application: {} ({})'.format(sa.name.encode('utf-8'), err))
 
     def migrate(self):
         """
@@ -131,5 +131,5 @@ class ApplicationMigrator(BaseMigrator):
         self.copy_custom_data()
         self.copy_oauth_policy()
 
-        logger.info('Successfully copied Application: {}'.format(self.destination_application.name))
+        logger.info('Successfully copied Application: {}'.format(self.destination_application.name.encode('utf-8')))
         return self.destination_application

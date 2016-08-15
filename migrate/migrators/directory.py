@@ -37,7 +37,7 @@ class DirectoryMigrator(BaseMigrator):
                 matches = self.destination_client.directories.search({'name': sd.name.encode('utf-8')})
                 return matches[0] if len(matches) > 0 else None
             except StormpathError as err:
-                logger.error('Failed to search for destination Directory: {} ({})'.format(sd.name, err))
+                logger.error('Failed to search for destination Directory: {} ({})'.format(sd.name.encode('utf-8'), err))
 
     def copy_dir(self):
         """
@@ -82,7 +82,7 @@ class DirectoryMigrator(BaseMigrator):
                     dd.save()
                     return dd
                 except StormpathError as err:
-                    logger.error('Failed to copy destination Directory: {} ({})'.format(sd.name, err))
+                    logger.error('Failed to copy destination Directory: {} ({})'.format(sd.name.encode('utf-8'), err))
 
         # I'm manually setting the agent_user_dn_password field to a
         # random string here because our API won't export any
@@ -95,7 +95,7 @@ class DirectoryMigrator(BaseMigrator):
             try:
                 return self.destination_client.directories.create(data)
             except StormpathError as err:
-                logger.error('Failed to copy Directory: {} ({})'.format(sd.name, err))
+                logger.error('Failed to copy Directory: {} ({})'.format(sd.name.encode('utf-8'), err))
 
     def copy_custom_data(self):
         """
@@ -115,7 +115,7 @@ class DirectoryMigrator(BaseMigrator):
                 dcd.save()
                 return dcd
             except StormpathError as err:
-                logger.error('Failed to copy CustomData for Directory: {} ({})'.format(sd.name, err))
+                logger.error('Failed to copy CustomData for Directory: {} ({})'.format(sd.name.encode('utf-8'), err))
 
     def copy_strength(self):
         """
@@ -136,7 +136,7 @@ class DirectoryMigrator(BaseMigrator):
                 ds.save()
                 return ds
             except StormpathError as err:
-                logger.error('Failed to copy Strength rules for Directory: {} ({})'.format(sd.name, err))
+                logger.error('Failed to copy Strength rules for Directory: {} ({})'.format(sd.name.encode('utf-8'), err))
 
     def migrate(self):
         """
@@ -161,5 +161,5 @@ class DirectoryMigrator(BaseMigrator):
         if self.provider_id not in MIRROR_PROVIDER_IDS:
             self.copy_strength()
 
-        logger.info('Successfully copied Directory: {}'.format(self.destination_directory.name))
+        logger.info('Successfully copied Directory: {}'.format(self.destination_directory.name.encode('utf-8')))
         return self.destination_directory

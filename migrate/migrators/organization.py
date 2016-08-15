@@ -34,7 +34,7 @@ class OrganizationMigrator(BaseMigrator):
                 matches = dc.organizations.search({'name': so.name})
                 return matches[0] if len(matches) > 0 else None
             except StormpathError as err:
-                logger.error('Failed to search for Organization: {} ({})'.format(so.name, err))
+                logger.error('Failed to search for Organization: {} ({})'.format(so.name.encode('utf-8'), err))
 
     def copy_org(self):
         """
@@ -64,7 +64,7 @@ class OrganizationMigrator(BaseMigrator):
                     do.save()
                     return do
                 except StormpathError as err:
-                    logger.error('Failed to copy Organization: {} ({})'.format(so.name, err))
+                    logger.error('Failed to copy Organization: {} ({})'.format(so.name.encode('utf-8'), err))
 
         # If we get here, it means we need to create the Organization from
         # scratch.
@@ -72,7 +72,7 @@ class OrganizationMigrator(BaseMigrator):
             try:
                 return dc.tenant.organizations.create(data)
             except StormpathError as err:
-                logger.error('Failed to copy Organization: {} ({})'.format(so.name, err))
+                logger.error('Failed to copy Organization: {} ({})'.format(so.name.encode('utf-8'), err))
 
     def copy_custom_data(self):
         """
@@ -92,7 +92,7 @@ class OrganizationMigrator(BaseMigrator):
                 do.custom_data.save()
                 return do.custom_data
             except StormpathError as err:
-                logger.error('Failed to copy CustomData for Organization: {} ({})'.format(so.name, err))
+                logger.error('Failed to copy CustomData for Organization: {} ({})'.format(so.name.encode('utf-8'), err))
 
     def migrate(self):
         """

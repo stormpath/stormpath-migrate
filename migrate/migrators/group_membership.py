@@ -34,7 +34,7 @@ class GroupMembershipMigrator(BaseMigrator):
                 matches = dc.directories.search({'name': sd.name})
                 return matches[0] if len(matches) > 0 else None
             except StormpathError as err:
-                logger.error('Failed to search for Directory: {} ({})'.format(sd.name, err))
+                logger.error('Failed to search for Directory: {} ({})'.format(sd.name.encode('utf-8'), err))
 
     def get_destination_group(self):
         """
@@ -51,7 +51,7 @@ class GroupMembershipMigrator(BaseMigrator):
                 matches = dd.groups.search({'name': sg.name})
                 return matches[0] if len(matches) > 0 else None
             except StormpathError as err:
-                logger.error('Failed to search for Group: {} in Directory: {} ({})'.format(sg.name, dd.name, err))
+                logger.error('Failed to search for Group: {} in Directory: {} ({})'.format(sg.name.encode('utf-8'), dd.name.encode('utf-8'), err))
 
     def get_destination_account(self):
         """
@@ -68,7 +68,7 @@ class GroupMembershipMigrator(BaseMigrator):
                 matches = dd.accounts.search({'username': sa.username})
                 return matches[0] if len(matches) > 0 else None
             except StormpathError as err:
-                logger.error('Failed to search for Account: {} in Directory: {} ({})'.format(sa.username, dd.name, err))
+                logger.error('Failed to search for Account: {} in Directory: {} ({})'.format(sa.username.encode('utf-8'), dd.name.encode('utf-8'), err))
 
     def copy_membership(self):
         """
@@ -90,7 +90,7 @@ class GroupMembershipMigrator(BaseMigrator):
             try:
                 return dc.group_memberships.create({'account': da, 'group': dg})
             except StormpathError as err:
-                logger.error('Failed to copy GroupMembership for Account: {} and Group: {} in Directory: {} ({})'.format(da.username, dg.name, dd.name, err))
+                logger.error('Failed to copy GroupMembership for Account: {} and Group: {} in Directory: {} ({})'.format(da.username.encode('utf-8'), dg.name.encode('utf-8'), dd.name.encode('utf-8'), err))
 
     def migrate(self):
         """
@@ -113,14 +113,14 @@ class GroupMembershipMigrator(BaseMigrator):
         # client is concurrently deleting resources on the SOURCE or DESTINATION
         # and messing things up.
         if not self.destination_directory:
-            logger.critical('The Directory: {} does not exist in the destination. This is a fatal error.'.format(sg.directory.name))
+            logger.critical('The Directory: {} does not exist in the destination. This is a fatal error.'.format(sg.directory.name.encode('utf-8')))
             raise RuntimeError('Read the log.')
         elif not self.destination_group:
-            logger.warning('The Group: {} does not exist in the destination Directory: {}.  Skipping Membership migration.'.format(sg.name, sd.name))
+            logger.warning('The Group: {} does not exist in the destination Directory: {}.  Skipping Membership migration.'.format(sg.name.encode('utf-8'), sd.name.encode('utf-8')))
         elif not self.destination_account:
-            logger.warning('The Account: {} does not exist in the destination Directory: {}.  Skipping Membership migration.'.format(sa.username, sd.name))
+            logger.warning('The Account: {} does not exist in the destination Directory: {}.  Skipping Membership migration.'.format(sa.username.encode('utf-8'), sd.name.encode('utf-8')))
         else:
             membership = self.copy_membership()
-            logger.info('Successfully copied GroupMembership for Account: {} and Group: {} in Directory: {}'.format(sa.username, sg.name, sd.name))
+            logger.info('Successfully copied GroupMembership for Account: {} and Group: {} in Directory: {}'.format(sa.username.encode('utf-8'), sg.name.encode('utf-8'), sd.name.encode('utf-8')))
 
             return membership

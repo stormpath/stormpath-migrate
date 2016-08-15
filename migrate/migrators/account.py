@@ -38,7 +38,7 @@ class AccountMigrator(BaseMigrator):
                 sa.custom_data.refresh()
                 return sa.custom_data
             except StormpathError as err:
-                logger.error('Failed to fetch CustomData for source Account: {} ({})'.format(sa.username, err))
+                logger.error('Failed to fetch CustomData for source Account: {} ({})'.format(sa.username.encode('utf-8'), err))
 
     def get_destination_account(self):
         """
@@ -60,7 +60,7 @@ class AccountMigrator(BaseMigrator):
 
                 return matches[0] if len(matches) > 0 else None
             except StormpathError as err:
-                logger.error('Failed to search for Account: {} in destination Directory: {} ({})'.format(username, directory.name, err))
+                logger.error('Failed to search for Account: {} in destination Directory: {} ({})'.format(username.encode('utf-8'), directory.name.encode('utf-8'), err))
 
     def copy_account(self):
         """
@@ -102,7 +102,7 @@ class AccountMigrator(BaseMigrator):
                     da.save()
                     return da
                 except StormpathError as err:
-                    logger.error('Failed to update Account: {} in destination Directory: {} ({})'.format(sa.username, dd.name, err))
+                    logger.error('Failed to update Account: {} in destination Directory: {} ({})'.format(sa.username.encode('utf-8'), dd.name.encode('utf-8'), err))
 
         # If we get here, it means the Account needs to be created in the
         # destination Directory.
@@ -117,7 +117,7 @@ class AccountMigrator(BaseMigrator):
                     })
                     return da
                 except StormpathError as err:
-                    logger.error('Failed to create {} Account: {} in destination Directory: {} ({})'.format(provider_id.title(), sa.username, dd.name, err))
+                    logger.error('Failed to create {} Account: {} in destination Directory: {} ({})'.format(provider_id.title(), sa.username.encode('utf-8'), dd.name.encode('utf-8'), err))
 
         elif provider_id == 'stormpath':
             if self.random_password:
@@ -128,7 +128,7 @@ class AccountMigrator(BaseMigrator):
                         da = dd.accounts.create(data, registration_workflow_enabled=False)
                         return da
                     except StormpathError as err:
-                        logger.error('Failed to create Account: {} in destination Directory: {} ({})'.format(sa.username, dd.name, err))
+                        logger.error('Failed to create Account: {} in destination Directory: {} ({})'.format(sa.username.encode('utf-8'), dd.name.encode('utf-8'), err))
 
             # If we get here, if means we're going to use a pre-existing
             # password hash to create this Account.
@@ -137,10 +137,10 @@ class AccountMigrator(BaseMigrator):
                     da = dd.accounts.create(data, password_format='mcf', registration_workflow_enabled=False)
                     return da
                 except StormpathError as err:
-                    logger.error('Failed to create Account: {} in destination Directory: {} ({})'.format(sa.username, dd.name, err))
+                    logger.error('Failed to create Account: {} in destination Directory: {} ({})'.format(sa.username.encode('utf-8'), dd.name.encode('utf-8'), err))
 
         else:
-            logger.warning('Skipping {} Account creation for Account: {} in destination Directory: {} because Account is not a Cloud or Social Account.'.format(provider_id.upper(), da.username, dd.name))
+            logger.warning('Skipping {} Account creation for Account: {} in destination Directory: {} because Account is not a Cloud or Social Account.'.format(provider_id.upper(), da.username.encode('utf-8'), dd.name.encode('utf-8')))
 
     def copy_custom_data(self):
         """
@@ -159,8 +159,8 @@ class AccountMigrator(BaseMigrator):
             try:
                 da.custom_data.save()
                 return da.custom_data
-            except StormpathError, err:
-                logger.error('Failed to copy CustomData for source Account: {} into destination Account: {} ({})'.format(sa.username, da.username, err))
+            except StormpathError as err:
+                logger.error('Failed to copy CustomData for source Account: {} into destination Account: {} ({})'.format(sa.username.encode('utf-8'), da.username.encode('utf-8'), err))
 
     def migrate(self):
         """
@@ -181,8 +181,8 @@ class AccountMigrator(BaseMigrator):
 
         if self.destination_account:
             self.copy_custom_data()
-            logger.info('Successfully copied Account: {} into destination Directory: {}'.format(sa.username, dd.name))
+            logger.info('Successfully copied Account: {} into destination Directory: {}'.format(sa.username.encode('utf-8'), dd.name.encode('utf-8')))
 
             return self.destination_account
         else:
-            logger.warning('Not copying Account: {} into destination Directory: {}'.format(sa.username, dd.name))
+            logger.warning('Not copying Account: {} into destination Directory: {}'.format(sa.username.encode('utf-8'), dd.name.encode('utf-8')))
