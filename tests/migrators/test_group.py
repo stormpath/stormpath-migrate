@@ -44,7 +44,7 @@ class GroupMigratorTest(TestCase):
 
     def test_copy_group(self):
         migrator = GroupMigrator(destination_directory=self.dst_dir, source_group=self.group)
-        migrator.get_destination_group()
+        migrator.destination_group = migrator.get_destination_group()
         migrator.get_destination_group()
         copied_group = migrator.copy_group()
 
@@ -55,7 +55,7 @@ class GroupMigratorTest(TestCase):
 
     def test_copy_custom_data(self):
         migrator = GroupMigrator(destination_directory=self.dst_dir, source_group=self.group)
-        migrator.get_destination_group()
+        migrator.destination_group = migrator.get_destination_group()
         copied_group = migrator.copy_group()
         copied_custom_data = migrator.copy_custom_data()
 
