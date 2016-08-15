@@ -74,20 +74,23 @@ class ApplicationAccountStoreMappingMigratorTest(TestCase):
 
     def test_get_destination_account_store(self):
         migrator = ApplicationAccountStoreMappingMigrator(destination_application=self.src_app, source_account_store_mapping=self.src_mapping_1)
-        migrator.get_source_account_store()
+        migrator.destination_tenant = migrator.destination_application.tenant
+        migrator.source_account_store = migrator.source_account_store_mapping.account_store
         account_store = migrator.get_destination_account_store()
         self.assertEqual(account_store.name, self.dst_dir.name)
         self.assertEqual(account_store.description, self.dst_dir.description)
 
         migrator = ApplicationAccountStoreMappingMigrator(destination_application=self.src_app, source_account_store_mapping=self.src_mapping_2)
-        migrator.get_source_account_store()
+        migrator.destination_tenant = migrator.destination_application.tenant
+        migrator.source_account_store = migrator.source_account_store_mapping.account_store
         account_store = migrator.get_destination_account_store()
         self.assertEqual(account_store.name, self.dst_org.name)
         self.assertEqual(account_store.description, self.dst_org.description)
         self.assertEqual(account_store.name_key, self.dst_org.name_key)
 
         migrator = ApplicationAccountStoreMappingMigrator(destination_application=self.src_app, source_account_store_mapping=self.src_mapping_3)
-        migrator.get_source_account_store()
+        migrator.destination_tenant = migrator.destination_application.tenant
+        migrator.source_account_store = migrator.source_account_store_mapping.account_store
         account_store = migrator.get_destination_account_store()
         self.assertEqual(account_store.name, self.dst_group.name)
         self.assertEqual(account_store.description, self.dst_group.description)
