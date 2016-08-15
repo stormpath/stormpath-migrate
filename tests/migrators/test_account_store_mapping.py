@@ -141,6 +141,7 @@ class ApplicationAccountStoreMappingMigratorTest(TestCase):
     def test_migrate(self):
         migrator = ApplicationAccountStoreMappingMigrator(destination_application=self.dst_app, source_account_store_mapping=self.src_mapping_1)
         dst_mapping = migrator.migrate()
+
         self.assertEqual(dst_mapping.application.name, self.src_app.name)
         self.assertEqual(dst_mapping.application.description, self.src_app.description)
         self.assertEqual(dst_mapping.account_store.name, self.src_dir.name)
@@ -151,6 +152,7 @@ class ApplicationAccountStoreMappingMigratorTest(TestCase):
 
         migrator = ApplicationAccountStoreMappingMigrator(destination_application=self.dst_app, source_account_store_mapping=self.src_mapping_2)
         dst_mapping = migrator.migrate()
+
         self.assertEqual(dst_mapping.application.name, self.src_app.name)
         self.assertEqual(dst_mapping.application.description, self.src_app.description)
         self.assertEqual(dst_mapping.account_store.name, self.src_org.name)
@@ -162,6 +164,7 @@ class ApplicationAccountStoreMappingMigratorTest(TestCase):
 
         migrator = ApplicationAccountStoreMappingMigrator(destination_application=self.dst_app, source_account_store_mapping=self.src_mapping_3)
         dst_mapping = migrator.migrate()
+
         self.assertEqual(dst_mapping.application.name, self.src_app.name)
         self.assertEqual(dst_mapping.application.description, self.src_app.description)
         self.assertEqual(dst_mapping.account_store.name, self.src_group.name)
@@ -212,13 +215,16 @@ class OrganizationAccountStoreMappingMigratorTest(TestCase):
 
     def test_get_source_account_store(self):
         migrator = OrganizationAccountStoreMappingMigrator(destination_organization=self.dst_org, source_account_store_mapping=self.src_mapping_1)
-        account_store = migrator.get_source_account_store()
+        migrator.destination_tenant = migrator.destination_organization.tenant
+        account_store = migrator.source_account_store_mapping.account_store
+
         self.assertEqual(account_store.name, self.src_dir.name)
         self.assertEqual(account_store.description, self.src_dir.description)
 
         migrator = OrganizationAccountStoreMappingMigrator(destination_organization=self.dst_org, source_account_store_mapping=self.src_mapping_2)
-        account_store = migrator.get_source_account_store()
-        account_store = migrator.get_source_account_store()
+        migrator.destination_tenant = migrator.destination_organization.tenant
+        account_store = migrator.source_account_store_mapping.account_store
+
         self.assertEqual(account_store.name, self.src_group.name)
         self.assertEqual(account_store.description, self.src_group.description)
 
