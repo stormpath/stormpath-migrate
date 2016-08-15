@@ -49,7 +49,7 @@ class TenantMigrator(BaseMigrator):
 
                     if not hash:
                         random_password = True
-                        logger.warning('No password hash found for Account: {}.  Using random password.'.format(account.username))
+                        logger.warning('No password hash found for Account: {}.  Using random password.'.format(account.username.encode('utf-8')))
 
                     migrator = AccountMigrator(destination_directory=destination_directory, source_account=account, source_password=hash, random_password=random_password)
                     migrated_account = migrator.migrate()
