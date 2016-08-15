@@ -38,12 +38,6 @@ class ApplicationMigratorTest(TestCase):
     def tearDown(self):
         self.app.delete()
 
-    def test_get_custom_data(self):
-        migrator = ApplicationMigrator(destination_client=self.dst, source_application=self.app)
-        custom_data = migrator.get_custom_data()
-        self.assertTrue(custom_data)
-        self.assertEqual(custom_data['hi'], 'there')
-
     def test_get_oauth_policy(self):
         migrator = ApplicationMigrator(destination_client=self.dst, source_application=self.app)
         oauth_policy = migrator.get_oauth_policy()

@@ -45,16 +45,6 @@ class AccountMigratorTest(TestCase):
         self.dir.delete()
         self.dst_dir.delete()
 
-    def test_get_custom_data(self):
-        migrator = AccountMigrator(
-            destination_directory = self.dst_dir,
-            source_account = self.account,
-            source_password = '$2a$13$7nOY.0Y9BmFUx77cT/3bZO8rTSDbi0a1JPHdzqyp6YexrNTYKZbQ2',
-        )
-        custom_data = migrator.get_custom_data()
-
-        self.assertEqual(custom_data['hi'], 'there')
-
     def test_copy_account(self):
         migrator = AccountMigrator(
             destination_directory = self.dst_dir,

@@ -23,21 +23,6 @@ class DirectoryMigratorTest(TestCase):
         self.src = Client(id=SRC_CLIENT_ID, secret=SRC_CLIENT_SECRET)
         self.dst = Client(id=DST_CLIENT_ID, secret=DST_CLIENT_SECRET)
 
-    def test_get_custom_data(self):
-        dir = self.src.directories.create({
-            'description': uuid4().hex,
-            'name': uuid4().hex,
-            'status': 'DISABLED',
-            'custom_data': {'hi': 'there'},
-        })
-
-        migrator = DirectoryMigrator(destination_client=self.dst, source_directory=dir)
-        custom_data = migrator.get_custom_data()
-        self.assertTrue(custom_data)
-        self.assertEqual(custom_data['hi'], 'there')
-
-        dir.delete()
-
     def test_get_strength(self):
         dir = self.src.directories.create({
             'description': uuid4().hex,
