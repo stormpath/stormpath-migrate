@@ -98,6 +98,7 @@ class ApplicationAccountStoreMappingMigratorTest(TestCase):
         migrator.source_account_store = migrator.source_account_store_mapping.account_store
         migrator.destination_account_store = migrator.get_destination_account_store()
         dst_mapping = migrator.copy_mapping()
+
         self.assertEqual(dst_mapping.application.name, self.src_app.name)
         self.assertEqual(dst_mapping.application.description, self.src_app.description)
         self.assertEqual(dst_mapping.account_store.name, self.src_dir.name)
@@ -107,7 +108,11 @@ class ApplicationAccountStoreMappingMigratorTest(TestCase):
         self.assertEqual(dst_mapping.is_default_group_store, self.src_mapping_1.is_default_group_store)
 
         migrator = ApplicationAccountStoreMappingMigrator(destination_application=self.dst_app, source_account_store_mapping=self.src_mapping_2)
+        migrator.destination_tenant = migrator.destination_application.tenant
+        migrator.source_account_store = migrator.source_account_store_mapping.account_store
+        migrator.destination_account_store = migrator.get_destination_account_store()
         dst_mapping = migrator.copy_mapping()
+
         self.assertEqual(dst_mapping.application.name, self.src_app.name)
         self.assertEqual(dst_mapping.application.description, self.src_app.description)
         self.assertEqual(dst_mapping.account_store.name, self.src_org.name)
@@ -118,7 +123,11 @@ class ApplicationAccountStoreMappingMigratorTest(TestCase):
         self.assertEqual(dst_mapping.is_default_group_store, self.src_mapping_2.is_default_group_store)
 
         migrator = ApplicationAccountStoreMappingMigrator(destination_application=self.dst_app, source_account_store_mapping=self.src_mapping_3)
+        migrator.destination_tenant = migrator.destination_application.tenant
+        migrator.source_account_store = migrator.source_account_store_mapping.account_store
+        migrator.destination_account_store = migrator.get_destination_account_store()
         dst_mapping = migrator.copy_mapping()
+
         self.assertEqual(dst_mapping.application.name, self.src_app.name)
         self.assertEqual(dst_mapping.application.description, self.src_app.description)
         self.assertEqual(dst_mapping.account_store.name, self.src_group.name)
