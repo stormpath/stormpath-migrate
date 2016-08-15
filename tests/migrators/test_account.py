@@ -67,6 +67,7 @@ class AccountMigratorTest(TestCase):
             source_account = self.account,
             source_password = '$2a$13$7nOY.0Y9BmFUx77cT/3bZO8rTSDbi0a1JPHdzqyp6YexrNTYKZbQ2',
         )
+        migrator.destination_account = migrator.get_destination_account()
         migrator.copy_account()
         copied_data = migrator.copy_custom_data()
 
