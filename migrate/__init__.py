@@ -4,7 +4,7 @@
 from logging import DEBUG, Formatter, StreamHandler, getLogger
 
 
-__version__ = '1.1.4'
+__version__ = '1.1.5'
 
 
 # Global logger object.  Used for controlling program output.
