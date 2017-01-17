@@ -118,6 +118,7 @@ class AccountMigrator(BaseMigrator):
                     return da
                 except StormpathError as err:
                     logger.error('Failed to create {} Account: {} in destination Directory: {} ({})'.format(provider_id.title(), sa.username.encode('utf-8'), dd.name.encode('utf-8'), err))
+                    break
 
         elif provider_id == 'stormpath':
             if self.random_password:
